@@ -69,14 +69,17 @@ class AlternativeParser:
 
     def parse(self, c):
         origPos = c.position
+        firstFailure = None
         for element in self.__elements:
             r = element.parse(c)
             if r.ok:
-                r.match = element
+                r.match = element  # @todo Could we avoid that? It's convinient when the Alternativ is top-level in the rule, but lost anyway when the alternative in embeded in the rule
                 return r
             else:
+                if firstFailure is None:
+                    firstFailure = r
                 c.reset(origPos)
-        return ParsingFailure(c.position, "Expected something in")
+        return firstFailure  # @todo Should we return the first failure, the last failure, or a compound failure?
 
 
 class RepetitionParser:
@@ -156,7 +159,7 @@ class StringExpr:
 class StringTerm:
     def __init__(self, i, s):
         assert i is None or isinstance(i, IntTerm)
-        assert isinstance(s, String)
+        assert isinstance(s, StringFactor)
         self.__i = i
         self.__s = s
 
@@ -181,12 +184,25 @@ class StringTerm:
             return r
 
 
-# Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
+# Grammar rule: stringFactor = string | '(', stringExpr, ')';
 class StringFactor:
+    def __init__(self, real):
+        assert isinstance(real, (String, StringExpr))
+        self.__real = real
+
+    def dump(self):
+        return self.__real.dump()
+
     @staticmethod
     def parse(c):
-        # @todo Alternative
-        return String.parse(c)
+        r = AlternativeParser(String, SequenceParser(LiteralParser("("), StringExpr, LiteralParser(")"))).parse(c)
+        if r.ok:
+            if r.match is String:
+                return ParsingSuccess(StringFactor(r.value))
+            else:
+                return ParsingSuccess(StringFactor(r.value[1]))
+        else:
+            return r
 
 
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
@@ -463,8 +479,15 @@ class TestCase(unittest.TestCase):
         self.expectSyntaxError('(1+a)*"abc"', 0, "Expected <\">")  # @todo Improve error message
         self.expectSyntaxError('(a+1)*"abc"', 0, "Expected <\">")  # @todo Improve error message
 
+    def testBadStringFactor(self):
+        self.expectSyntaxError('(1+1)*a', 6, "Expected <\">")  # @todo Expected int or string expression
+
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
+
+    def testStringExpr(self):
+        self.parseAndDump('("abc")', "abc")
+        self.parseAndDump('(1+1)*("abc"+"def")', "abcdefabcdef")
 
 
 if __name__ == "__main__":  # pragma no branch
