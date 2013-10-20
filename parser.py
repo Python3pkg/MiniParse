@@ -3,7 +3,7 @@
 import unittest
 
 
-class ParsingError(Exception):
+class SyntaxError(Exception):
     pass
 
 
@@ -13,11 +13,8 @@ class Cursor(object):
         self.__i = 0
 
     def get(self, n):
-        self.__assertNMoreChars(n)
-        return self.__get(n)
-
-    def __assertNMoreChars(self, n):
         assert self.__i + n <= len(self.__s)
+        return self.__get(n)
 
     def __get(self, n):
         return self.__s[self.__i:self.__i + n]
@@ -38,29 +35,31 @@ class Cursor(object):
     def position(self):
         return self.__i
 
-    def discardSpaces(self):
-        while self.__get(1) in (" ", "\t"):
-            self.advance(1)
+    def reset(self, i):
+        self.__i = i
+
+
+class ParsingFailure:
+    def __init__(self, reason):
+        self.ok = False
+        self.reason = reason
+
+
+class ParsingSuccess:
+    def __init__(self, value):
+        self.ok = True
+        self.value = value
 
 
 def parse(s):
     c = Cursor(s)
-    return expect(parseStringExpr, c)
-
-
-def expect(parse, c):
-    ok, exprOrError = parse(c)
-    if ok:
-        return exprOrError
+    r = parseStringExpr(c)
+    if not r.ok:
+        raise SyntaxError(c.position, r.reason)
+    elif not c.finished:
+        raise SyntaxError(c.position, "WTF")
     else:
-        raise ParsingError(c.position, exprOrError)
-
-
-def expectChar(e, c):
-    if c.startswith(e):
-        c.advance(len(e))
-    else:
-        raise ParsingError(c.position, "Expected '" + e + "'")
+        return r.value
 
 
 # Grammar rule: stringExpr = stringTerm, { '+', stringTerm };
@@ -73,13 +72,19 @@ class StringExpr:
 
 
 def parseStringExpr(c):
-    terms = [expect(parseStringTerm, c)]
-    while not c.finished:
-        c.discardSpaces()
-        expectChar("+", c)
-        c.discardSpaces()
-        terms.append(expect(parseStringTerm, c))
-    return True, StringExpr(terms)
+    terms = []
+    termParsingResult = parseStringTerm(c)
+    while termParsingResult.ok:
+        terms.append(termParsingResult.value)
+        if c.finished:
+            return ParsingSuccess(StringExpr(terms))
+        else:
+            if c.startswith("+"):
+                c.advance(1)
+                termParsingResult = parseStringTerm(c)
+            else:
+                return ParsingFailure("Expected '+'")
+    return termParsingResult
 
 
 # Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
@@ -95,13 +100,17 @@ class StringTerm:
 
 
 def parseStringTerm(c):
-    ok, i = parseIntTerm(c)
-    if ok:
-        c.discardSpaces()
-        expectChar('*', c)
-        c.discardSpaces()
-        s = expect(parseStringFactor, c)
-        return True, StringTerm(i, s)
+    rInt = IntTerm.parse(c)
+    if rInt.ok:
+        if c.startswith("*"):
+            c.advance(1)
+            rString = parseStringFactor(c)
+            if rString.ok:
+                return ParsingSuccess(StringTerm(rInt.value, rString.value))
+            else:
+                return rString
+        else:
+            return ParsingFailure("Expected '*' (then stringFactor)")
     else:
         return parseStringFactor(c)
 
@@ -112,8 +121,41 @@ def parseStringFactor(c):
 
 
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
-def parseIntTerm(c):
-    return parseIntFactor(c)
+class IntTerm:
+    def __init__(self, factors):
+        self.__factors = factors
+
+    def compute(self):
+        v = 1
+        for f in self.__factors:
+            v *= f.compute()
+        return v
+
+    @staticmethod
+    def parse(c):
+        factors = []
+        r = parseIntFactor(c)
+        while r.ok:
+            factors.append(r.value)
+            r = IntTerm.__parseTimesIntFactor(c)
+        if len(factors) == 0:
+            return ParsingFailure("Expected intTerm")
+        else:
+            return ParsingSuccess(IntTerm(factors))
+
+    @staticmethod
+    def __parseTimesIntFactor(c):
+        origPos = c.position
+        if c.startswith("*"):
+            c.advance(1)
+            r = parseIntFactor(c)
+            if r.ok:
+                return r
+            else:
+                c.reset(origPos)
+                return r
+        else:
+            return ParsingFailure("Expected '*'")
 
 
 # Grammar rule: intFactor = int | '(', intExpr, ')';
@@ -139,9 +181,9 @@ def parseInt(c):
     while c.get(1) in "0123456789":
         digits += c.advance(1)
     if len(digits) == 0:
-        return False, "Expected a digit"
+        return ParsingFailure("Expected a digit")
     else:
-        return True, Int(int(digits))
+        return ParsingSuccess(Int(int(digits)))
 
 
 # Grammar rule: string = '"', { stringElement }, '"';
@@ -154,17 +196,22 @@ class String:
 
 
 def parseString(c):
-    # if c.startswith('"'):
-        expectChar('"', c)
+    if c.startswith('"'):
+        c.advance(1)
         elements = []
-        while not c.startswith('"'):
-            if c.finished:
-                return False, "Hit EOF while parsing string"
-            elements.append(expect(parseStringElement, c))
-        expectChar('"', c)
-        return True, String(elements)
-    # else:
-        # return False, "Expected '\"'"
+        r = parseStringElement(c)
+        while r.ok:
+            elements.append(r.value)
+            r = parseStringElement(c)
+        if r.reason != "Normal string end":
+            return r
+        if c.startswith('"'):
+            c.advance(1)
+            return ParsingSuccess(String(elements))
+        else:
+            return ParsingFailure("Expected closing quote '\"'")
+    else:
+        return ParsingFailure("Expected opening quote '\"'")
 
 
 # Grammar rule: stringElement = char | escape;
@@ -187,14 +234,17 @@ class Escape:
 
 def parseStringElement(c):
     if c.startswith("\\"):
-        expectChar('\\', c)
-        if c.get(1) in ('"', '\\'):
-            return True, Escape(c.advance(1))
-        return False, "Expected '\"' or '\\'"
-    # elif c.startswith('"'):
-    #     return False, "Unexpected '\"'"
+        if c.get(2) in ('\\"', '\\\\'):
+            c.advance(1)
+            return ParsingSuccess(Escape(c.advance(1)))
+        else:
+            return ParsingFailure("Bad escape sequence")
+    elif c.startswith('"'):
+        return ParsingFailure("Normal string end")
+    elif c.finished:
+        return ParsingFailure("Unexpected end of file")
     else:
-        return True, Char(c.advance(1))
+        return ParsingSuccess(Char(c.advance(1)))
 
 
 class TestCase(unittest.TestCase):
@@ -202,12 +252,12 @@ class TestCase(unittest.TestCase):
         actualOutput = parse(input).dump()
         self.assertEqual(actualOutput, expectedOutput)
 
-    def expectParsingError(self, input, expectedPosition, expectedMessage):
-        with self.assertRaises(ParsingError) as cm:
+    def expectSyntaxError(self, input, expectedPosition, expectedMessage):
+        with self.assertRaises(SyntaxError) as cm:
             actualOutput = parse(input).dump()
         exception = cm.exception
         actualPosition, actualMessage = exception.args
-        self.assertIsInstance(exception, ParsingError)
+        self.assertIsInstance(exception, SyntaxError)
         self.assertEqual(actualPosition, expectedPosition)
         self.assertEqual(actualMessage, expectedMessage)
 
@@ -218,19 +268,21 @@ class TestCase(unittest.TestCase):
         self.parseDump('"a\\"b\\\\c"', "a\"b\\c")
 
     def testUnterminatedString(self):
-        self.expectParsingError('"abc', 4, "Hit EOF while parsing string")
+        self.expectSyntaxError('"abc', 4, "Unexpected end of file")
 
     def testTrailingJunk(self):
-        self.expectParsingError('"abc"xxx', 5, "Expected '+'")
+        self.expectSyntaxError('"abc"xxx', 5, "Expected '+'")
 
     def testBadEscapeSequence(self):
-        self.expectParsingError('"ab\\c"', 4, "Expected '\"' or '\\'")
+        self.expectSyntaxError('"ab\\c"', 3, "Bad escape sequence")
 
     def testStringAddition(self):
-        self.parseDump('"abc" + "def"', "abcdef")
+        self.parseDump('"abc"+"def"', "abcdef")
 
     def testStringMultiplication(self):
-        self.parseDump('2 * "abc"', "abcabc")
+        self.parseDump('2*"abc"', "abcabc")
+        self.parseDump('2*2*"abc"', "abcabcabcabc")
+        self.parseDump('2*2*2*"abc"', "abcabcabcabcabcabcabcabc")
 
 
 if __name__ == "__main__":  # pragma no branch
