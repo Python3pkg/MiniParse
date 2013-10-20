@@ -68,10 +68,6 @@ class Cursor(object):
     def startswith(self, s):
         return self.__get(len(s)) == s
 
-    def consume(self, s):
-        assert self.startswith(s)
-        self.advance(len(s))
-
     @property
     def finished(self):
         return self.__i == len(self.__s)
@@ -80,28 +76,9 @@ class Cursor(object):
     def position(self):
         return self.__i
 
-    def consumeSpaces(self):
+    def discardSpaces(self):
         while self.__get(1) in (" ", "\t"):
             self.advance(1)
-
-
-class CursorTestCase(unittest.TestCase):
-    def setUp(self):
-        self.c = Cursor("abcde")
-
-    def testAdvanceToEnd(self):
-        self.assertEqual(self.c.advance(4), "abcd")
-        self.assertFalse(self.c.finished)
-        self.assertEqual(self.c.advance(1), "e")
-        self.assertTrue(self.c.finished)
-
-    def testConsumeToEnd(self):
-        self.c.consume("abcd")
-        self.assertFalse(self.c.finished)
-        self.assertEqual(self.c.position, 4)
-        self.assertEqual(self.c.get(1), "e")
-        self.c.consume("e")
-        self.assertTrue(self.c.finished)
 
 
 def parse(s):
@@ -119,7 +96,7 @@ def expect(parse, c):
 
 def expectChar(e, c):
     if c.startswith(e):
-        c.consume(e)
+        c.advance(len(e))
     else:
         raise ParsingError(c.position, "Expected '" + e + "'")
 
@@ -128,9 +105,9 @@ def expectChar(e, c):
 def parseStringExpr(c):
     terms = [expect(parseStringTerm, c)]
     while not c.finished:
-        c.consumeSpaces()
+        c.discardSpaces()
         expectChar("+", c)
-        c.consumeSpaces()
+        c.discardSpaces()
         terms.append(expect(parseStringTerm, c))
     return True, StringExpr(terms)
 
@@ -151,13 +128,13 @@ def parseStringTerm(c):
 # Grammar rule: string = '"', { stringElement }, '"';
 def parseString(c):
     # if c.startswith('"'):
-        c.consume('"')
+        expectChar('"', c)
         elements = []
         while not c.startswith('"'):
             if c.finished:
                 return False, "Hit EOF while parsing string"
             elements.append(expect(parseStringElement, c))
-        c.consume('"')
+        expectChar('"', c)
         return True, String(elements)
     # else:
         # return False, "Expected '\"'"
@@ -167,7 +144,7 @@ def parseString(c):
 # Grammar rule: escape = '\"' | '\\';
 def parseStringElement(c):
     if c.startswith("\\"):
-        c.consume("\\")
+        expectChar('\\', c)
         if c.get(1) in ('"', '\\'):
             return True, Escape(c.advance(1))
         return False, "Expected '\"' or '\\'"
