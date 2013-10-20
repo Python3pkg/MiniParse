@@ -43,7 +43,7 @@ class LiteralParser:
         if c.startswith(self.__value):
             c.advance(len(self.__value))
             return ParsingSuccess(self.__value)
-        return ParsingFailure("Expected literal <" + self.__value + ">")
+        return ParsingFailure(c.position, "Expected <" + self.__value + ">")
 
 
 class SequenceParser:
@@ -75,7 +75,7 @@ class AlternativeParser:
                 return r
             else:
                 c.reset(origPos)
-        return ParsingFailure("Expected something in")
+        return ParsingFailure(c.position, "Expected something in")
 
 
 class RepetitionParser:
@@ -92,8 +92,9 @@ class RepetitionParser:
 
 
 class ParsingFailure:
-    def __init__(self, reason):
+    def __init__(self, position, reason):
         self.ok = False
+        self.position = position
         self.reason = reason
 
 
@@ -111,7 +112,7 @@ def parse(s):
     c = Cursor(s)
     r = StringExpr.parse(c)
     if not r.ok:
-        raise SyntaxError(c.position, r.reason)
+        raise SyntaxError(r.position, r.reason)
     elif not c.finished:
         raise SyntaxError(c.position, "Expected <+>")
     else:
@@ -129,7 +130,7 @@ class StringExpr:
     @staticmethod
     def parse(c):
         r = SequenceParser(StringTerm, RepetitionParser(SequenceParser(LiteralParser("+"), StringTerm))).parse(c)
-        if r:
+        if r.ok:
             terms = [r.value[0]]
             terms += [v[1] for v in r.value[1]]
             return ParsingSuccess(StringExpr(terms))
@@ -265,9 +266,9 @@ class Char:
     @staticmethod
     def parse(c):
         if c.finished:
-            raise SyntaxError(c.position, "Unexpected end of file")
+            return ParsingFailure(c.position, "Unexpected end of file")
         elif c.get(1) in ("\"", "\\"):
-            return ParsingFailure("Unexpected <" + c.get(1) + ">")
+            return ParsingFailure(c.position, "Unexpected <" + c.get(1) + ">")
         else:
             return ParsingSuccess(Char(c.advance(1)))
 
@@ -284,8 +285,6 @@ class Escape:
         r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""))).parse(c)
         if r.ok:
             return ParsingSuccess(Escape(r.value[1]))
-        elif LiteralParser("\\").parse(c).ok:
-            raise SyntaxError(c.position - 1, "Bad escape sequence")
         else:
             return r
 
@@ -311,13 +310,13 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('"a\\"b\\\\c"', "a\"b\\c")
 
     def testUnterminatedString(self):
-        self.expectSyntaxError('"abc', 4, "Unexpected end of file")
+        self.expectSyntaxError('"abc', 4, "Expected <\">")
 
     def testTrailingJunk(self):
         self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
 
     def testBadEscapeSequence(self):
-        self.expectSyntaxError('"ab\\c"', 3, "Bad escape sequence")
+        self.expectSyntaxError('"ab\\c"', 3, "Expected <\">")  # @todo Improve error message
 
     def testStringAddition(self):
         self.parseAndDump('"abc"+"def"', "abcdef")
