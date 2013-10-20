@@ -200,17 +200,33 @@ class IntFactor:
 
 
 # Grammar rule: int = [ '-' ], digit, { digit };
-# Grammar rule: digit = '0' | '1' | '...' | '9';
 class Int:
-    def __init__(self, value):
-        self.__value = value
+    def __init__(self, digits):
+        self.__digits = digits
 
     def compute(self):
-        return self.__value
+        return int("".join(d.value for d in self.__digits))
 
     @staticmethod
     def parse(c):
-        digitParser = AlternativeParser(
+        # @todo Use an OptionalParser for the '-'
+        r = SequenceParser(Digit, RepetitionParser(Digit)).parse(c)
+        if r.ok:
+            digits = [r.value[0]]
+            digits += r.value[1]
+            return ParsingSuccess(Int(digits))
+        else:
+            return r
+
+
+# Grammar rule: digit = '0' | '1' | '...' | '9';
+class Digit:
+    def __init__(self, value):
+        self.value = value
+
+    @staticmethod
+    def parse(c):
+        r = AlternativeParser(
             LiteralParser("0"),
             LiteralParser("1"),
             LiteralParser("2"),
@@ -221,12 +237,9 @@ class Int:
             LiteralParser("7"),
             LiteralParser("8"),
             LiteralParser("9"),
-        )
-        r = SequenceParser(digitParser, RepetitionParser(digitParser)).parse(c)
+        ).parse(c)
         if r.ok:
-            digits = [r.value[0]]
-            digits += r.value[1]
-            return ParsingSuccess(Int(int("".join(digits))))
+            return ParsingSuccess(Digit(r.value))
         else:
             return r
 
@@ -255,7 +268,7 @@ class StringElement:
         return AlternativeParser(Char, Escape).parse(c)
 
 
-# Grammar rule: escape = '\"' | '\\';
+# Grammar rule: char = 'a' | 'b' | '...' | 'z';
 class Char:
     def __init__(self, value):
         self.__value = value
@@ -273,6 +286,7 @@ class Char:
             return ParsingSuccess(Char(c.advance(1)))
 
 
+# Grammar rule: escape = '\"' | '\\';
 class Escape:
     def __init__(self, value):
         self.__value = value
