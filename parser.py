@@ -73,7 +73,6 @@ class AlternativeParser:
         for element in self.__elements:
             r = element.parse(c)
             if r.ok:
-                r.match = element  # @todo Could we avoid that? It's convinient when the Alternative is top-level in the rule, but lost anyway when the alternative in embeded in the rule
                 return r
             else:
                 if firstFailure is None:
@@ -197,7 +196,7 @@ class StringFactor:
     def parse(c):
         r = AlternativeParser(String, SequenceParser(LiteralParser("("), StringExpr, LiteralParser(")"))).parse(c)
         if r.ok:
-            if r.match is String:
+            if isinstance(r.value, String):
                 return ParsingSuccess(StringFactor(r.value))
             else:
                 return ParsingSuccess(StringFactor(r.value[1]))
@@ -245,7 +244,7 @@ class IntFactor:
     def parse(c):
         r = AlternativeParser(Int, SequenceParser(LiteralParser("("), IntExpr, LiteralParser(")"))).parse(c)
         if r.ok:
-            if r.match is Int:
+            if isinstance(r.value, Int):
                 return ParsingSuccess(IntFactor(r.value))
             else:
                 return ParsingSuccess(IntFactor(r.value[1]))
