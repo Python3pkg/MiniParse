@@ -6,10 +6,11 @@ import unittest
 # EBNF Grammar
 
 # stringExpr = stringTerm, { '+', stringTerm };
-# stringTerm = [ ( intTerm | '(', intExpr, ')' ), '*' ], string;
-# intExpr = intTerm, { ( '+' | '-' ) , intTerm };
-# intTerm = { intFactor, ( '*' | '/' ) }, intFactor;
+# stringTerm = [ intTerm, '*' ], stringFactor;
+# stringFactor = ( string | '(', stringExpr, ')' );
+# intTerm = intFactor, { ( '*' | '/' ), intFactor };
 # intFactor = int | '(', intExpr, ')';
+# intExpr = intTerm, { ( '+' | '-' ) , intTerm };
 # int = [ '-' ], digit, { digit };
 # digit = '0' | '1' | '...' | '9';
 # string = '"', { stringElement }, '"';
