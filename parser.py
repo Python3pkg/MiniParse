@@ -36,9 +36,9 @@ class Cursor(object):
 
 
 class LiteralParser:
-    def __init__(self, value, message=None):
+    def __init__(self, value, expected=None):
         self.__value = value
-        self.__message = message
+        self.__expected = expected
 
     def parse(self, c):
         origPos = c.position
@@ -46,17 +46,20 @@ class LiteralParser:
             if c.startswith(v):
                 c.advance(1)
             else:
-                r = ParsingFailure(c.position, "Expected <" + self.__value + ">")
+                r = ParsingFailure(c.position, self.__expected or ["<" + self.__value + ">"])
                 c.reset(origPos)
-                if self.__message is not None:
-                    r.reason = self.__message
                 return r
         return ParsingSuccess(self.__value, None)
 
 
 class SequenceParser:
-    def __init__(self, *elements):
-        self.__elements = elements
+    def __init__(self, *args):
+        if hasattr(args[-1], "parse"):
+            self.__elements = args
+            self.__expected = None
+        else:
+            self.__elements = args[:-1]
+            self.__expected = args[-1]
 
     def parse(self, c):
         origPos = c.position
@@ -66,7 +69,10 @@ class SequenceParser:
             results.append(r)
             if not r.ok:
                 c.reset(origPos)
-                return furthestFailure(results)
+                f = furthestFailure(results)
+                if self.__expected is not None:
+                    f.expected = self.__expected
+                return f
         return ParsingSuccess([r.value for r in results], furthestFailure(results))
 
 
@@ -74,10 +80,10 @@ class AlternativeParser:
     def __init__(self, *args):
         if hasattr(args[-1], "parse"):
             self.__elements = args
-            self.__message = None
+            self.__expected = None
         else:
             self.__elements = args[:-1]
-            self.__message = args[-1]
+            self.__expected = args[-1]
 
     def parse(self, c):
         origPos = c.position
@@ -90,8 +96,8 @@ class AlternativeParser:
                 c.reset(origPos)
                 results.append(r)
         f = furthestFailure(results)
-        if self.__message is not None:
-            f.reason = self.__message
+        if self.__expected is not None:
+            f.expected = self.__expected
         return f
 
 
@@ -140,10 +146,10 @@ def furthestFailure(results):
 
 
 class ParsingFailure:
-    def __init__(self, position, reason):
+    def __init__(self, position, expected):
         self.ok = False
         self.position = position
-        self.reason = reason
+        self.expected = expected
 
 
 class ParsingSuccess:
@@ -167,20 +173,20 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.reason, "Expected <abcy>")
+        self.assertEqual(r.expected, ["<abcy>"])
 
     def testLiteralParserTellsWhereItFailed(self):
         p = LiteralParser("abcy")
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.reason, "Expected <abcy>")
+        self.assertEqual(r.expected, ["<abcy>"])
 
     def testOptionalParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = OptionalParser(LiteralParser("abcy"))
         r = p.parse(Cursor("abcd"))
         self.assertTrue(r.ok)
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.reason, "Expected <abcy>")
+        self.assertEqual(r.failure.expected, ["<abcy>"])
 
     def testSequenceStartingWithOptional(self):
         p = SequenceParser(
@@ -189,7 +195,7 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.reason, "Expected <abcy>")
+        self.assertEqual(r.expected, ["<abcy>"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = SequenceParser(
@@ -198,7 +204,7 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.reason, "Expected <abcy>")
+        self.assertEqual(r.failure.expected, ["<abcy>"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_OptionalIsLowerPriorityInCaseOfTie(self):
         p = SequenceParser(
@@ -207,7 +213,7 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.reason, "Expected <abcz>")
+        self.assertEqual(r.expected, ["<abcz>"])
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = RepetitionParser(
@@ -218,7 +224,7 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.reason, "Expected <abcy>")
+        self.assertEqual(r.failure.expected, ["<abcy>"])
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
         p = RepetitionParser(
@@ -231,14 +237,14 @@ class ErrorHandling(unittest.TestCase):
         self.assertTrue(r.ok)
         self.assertEqual(r.value, ["ab", "ab"])
         self.assertEqual(r.failure.position, 6)
-        self.assertEqual(r.failure.reason, "Expected <acd>")
+        self.assertEqual(r.failure.expected, ["<acd>"])
 
 
 def parse(s):
     c = Cursor(s)
     r = StringExpr.parse(c)
     if not r.ok:
-        raise SyntaxError(r.position, r.reason)
+        raise SyntaxError(r.position, "Expected " + " or ".join(r.expected))
     elif not c.finished:
         raise SyntaxError(c.position, "Expected <+>")
     else:
@@ -435,7 +441,7 @@ class Digit:
             LiteralParser("7"),
             LiteralParser("8"),
             LiteralParser("9"),
-            "Expected 0-9"
+            ["0-9"]
         ).parse(c)
         if r.ok:
             return ParsingSuccess(Digit(r.value), r.failure)
@@ -454,7 +460,7 @@ class String:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser('"', "Expected opening quote"), RepetitionParser(StringElement), LiteralParser('"', "Expected closing quote")).parse(c)
+        r = SequenceParser(LiteralParser('"', ["opening quote"]), RepetitionParser(StringElement), LiteralParser('"', ["closing quote"])).parse(c)
         if r.ok:
             return ParsingSuccess(String(r.value[1]), r.failure)
         else:
@@ -536,7 +542,7 @@ class Escape:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""), "Bad escape sequence")).parse(c)
+        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\"")), ["escape sequence"]).parse(c)
         if r.ok:
             return ParsingSuccess(Escape(r.value[1]), r.failure)
         else:
@@ -576,7 +582,7 @@ class TestCase(unittest.TestCase):
         self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
 
     def testBadEscapeSequence(self):
-        self.expectSyntaxError('"ab\\c"', 4, "Bad escape sequence")
+        self.expectSyntaxError('"ab\\c"', 4, "Expected escape sequence")
 
     def testStringAddition(self):
         self.parseAndDump('"abc"+"def"', "abcdef")
@@ -613,6 +619,12 @@ class TestCase(unittest.TestCase):
     def testStringExpr(self):
         self.parseAndDump('("abc")', "abc")
         self.parseAndDump('(1+1)*("abc"+"def")', "abcdefabcdef")
+
+    # def testBadOperation_1(self):
+    #     self.expectSyntaxError('(1%1)*"a"', 2, "Expected <+>, <->, <*> or </>")
+
+    # def testBadOperation_2(self):
+    #     self.expectSyntaxError('(1+1%1)*"a"', 4, "Expected <+>, <->, <*> or </>")
 
 
 if __name__ == "__main__":  # pragma no branch
