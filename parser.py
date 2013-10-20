@@ -72,6 +72,7 @@ class AlternativeParser:
         for element in self.__elements:
             r = element.parse(c)
             if r.ok:
+                r.match = element
                 return r
             else:
                 c.reset(origPos)
@@ -122,6 +123,7 @@ def parse(s):
 # Grammar rule: stringExpr = stringTerm, { '+', stringTerm };
 class StringExpr:
     def __init__(self, terms):
+        assert all(isinstance(term, StringTerm) for term in terms)
         self.__terms = terms
 
     def dump(self):
@@ -141,21 +143,30 @@ class StringExpr:
 # Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
 class StringTerm:
     def __init__(self, i, s):
+        assert i is None or isinstance(i, IntTerm)
+        assert isinstance(s, String)
         self.__i = i
         self.__s = s
 
     def dump(self):
         s = self.__s.dump()
-        i = self.__i.compute()
+        if self.__i is None:
+            i = 1
+        else:
+            i = self.__i.compute()
         return i * s
 
     @staticmethod
     def parse(c):
         # @todo OptionalParser
         rInt = SequenceParser(IntTerm, LiteralParser("*")).parse(c)
+        if rInt.ok:
+            i = rInt.value[0]
+        else:
+            i = None
         rString = StringFactor.parse(c)
-        if rInt.ok and rString.ok:
-            return ParsingSuccess(StringTerm(rInt.value[0], rString.value))
+        if rString.ok:
+            return ParsingSuccess(StringTerm(i, rString.value))
         else:
             return rString
 
@@ -170,6 +181,7 @@ class StringFactor:
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
 class IntTerm:
     def __init__(self, factors):
+        assert all(isinstance(factor, (Int, IntExpr)) for factor in factors)
         self.__factors = factors
 
     def compute(self):
@@ -193,15 +205,43 @@ class IntTerm:
 class IntFactor:
     @staticmethod
     def parse(c):
-        return Int.parse(c)
+        r = AlternativeParser(Int, SequenceParser(LiteralParser("("), IntExpr, LiteralParser(")"))).parse(c)
+        if r.ok:
+            if r.match is Int:
+                return r
+            else:
+                return ParsingSuccess(r.value[1])
+        else:
+            return r
 
 
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
+class IntExpr:
+    def __init__(self, terms):
+        assert all(isinstance(term, IntTerm) for term in terms)
+        self.__terms = terms
+
+    def compute(self):
+        v = 0
+        for term in self.__terms:
+            v += term.compute()
+        return v
+
+    @staticmethod
+    def parse(c):
+        r = SequenceParser(IntTerm, RepetitionParser(SequenceParser(LiteralParser("+"), IntTerm))).parse(c)
+        if r.ok:
+            terms = [r.value[0]]
+            terms += [v[1] for v in r.value[1]]
+            return ParsingSuccess(IntExpr(terms))
+        else:
+            return r
 
 
 # Grammar rule: int = [ '-' ], digit, { digit };
 class Int:
     def __init__(self, digits):
+        assert all(isinstance(digit, Digit) for digit in digits)
         self.__digits = digits
 
     def compute(self):
@@ -222,6 +262,7 @@ class Int:
 # Grammar rule: digit = '0' | '1' | '...' | '9';
 class Digit:
     def __init__(self, value):
+        assert isinstance(value, str)
         self.value = value
 
     @staticmethod
@@ -247,6 +288,7 @@ class Digit:
 # Grammar rule: string = '"', { stringElement }, '"';
 class String:
     def __init__(self, elements):
+        assert all(isinstance(element, (Char, Escape)) for element in elements)
         self.__elements = elements
 
     def dump(self):
@@ -271,6 +313,7 @@ class StringElement:
 # Grammar rule: char = 'a' | 'b' | '...' | 'z';
 class Char:
     def __init__(self, value):
+        assert isinstance(value, str)
         self.__value = value
 
     def dump(self):
@@ -315,6 +358,7 @@ class Char:
 # Grammar rule: escape = '\"' | '\\';
 class Escape:
     def __init__(self, value):
+        assert isinstance(value, str)
         self.__value = value
 
     def dump(self):
@@ -373,6 +417,15 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('2*2*"abc"', "abcabcabcabc")
         self.parseAndDump('2*2*2*"abc"', "abcabcabcabcabcabcabcabc")
         self.parseAndDump('10*"a"', "aaaaaaaaaa")
+
+    def testIntAddition(self):
+        self.parseAndDump('(1)*"abc"', "abc")
+        self.parseAndDump('(1+1)*"abc"', "abcabc")
+        self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
+
+    def testBadAddition(self):
+        self.expectSyntaxError('(1+a)*"abc"', 0, "Expected <\">")  # @todo Improve error message
+        self.expectSyntaxError('(a+1)*"abc"', 0, "Expected <\">")  # @todo Improve error message
 
 
 if __name__ == "__main__":  # pragma no branch
