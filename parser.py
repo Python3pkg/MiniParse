@@ -278,12 +278,38 @@ class Char:
 
     @staticmethod
     def parse(c):
-        if c.finished:
-            return ParsingFailure(c.position, "Unexpected end of file")
-        elif c.get(1) in ("\"", "\\"):
-            return ParsingFailure(c.position, "Unexpected <" + c.get(1) + ">")
+        r = AlternativeParser(
+            LiteralParser("a"),
+            LiteralParser("b"),
+            LiteralParser("c"),
+            LiteralParser("d"),
+            LiteralParser("e"),
+            LiteralParser("f"),
+            LiteralParser("g"),
+            LiteralParser("h"),
+            LiteralParser("i"),
+            LiteralParser("j"),
+            LiteralParser("k"),
+            LiteralParser("l"),
+            LiteralParser("m"),
+            LiteralParser("n"),
+            LiteralParser("o"),
+            LiteralParser("p"),
+            LiteralParser("q"),
+            LiteralParser("r"),
+            LiteralParser("s"),
+            LiteralParser("t"),
+            LiteralParser("u"),
+            LiteralParser("v"),
+            LiteralParser("w"),
+            LiteralParser("x"),
+            LiteralParser("y"),
+            LiteralParser("z"),
+        ).parse(c)
+        if r.ok:
+            return ParsingSuccess(Char(r.value))
         else:
-            return ParsingSuccess(Char(c.advance(1)))
+            return r
 
 
 # Grammar rule: escape = '\"' | '\\';
@@ -319,6 +345,13 @@ class TestCase(unittest.TestCase):
 
     def testSimpleString(self):
         self.parseAndDump('"abc"', "abc")
+        self.parseAndDump('"abcdefghijklmnopqrstuvwxyz"', "abcdefghijklmnopqrstuvwxyz")
+
+    def testEmptyInput(self):
+        self.expectSyntaxError('', 0, "Expected <\">")  # @todo Improve error message
+
+    def testForbidenChar(self):
+        self.expectSyntaxError('"A"', 1, "Expected <\">")  # @todo Improve error message
 
     def testStringWithEscapes(self):
         self.parseAndDump('"a\\"b\\\\c"', "a\"b\\c")
