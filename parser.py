@@ -3,20 +3,6 @@
 import unittest
 
 
-# EBNF Grammar
-
-# stringExpr = stringTerm, { '+', stringTerm };
-# stringTerm = [ intTerm, '*' ], stringFactor;
-# stringFactor = ( string | '(', stringExpr, ')' );
-# intTerm = intFactor, { ( '*' | '/' ), intFactor };
-# intFactor = int | '(', intExpr, ')';
-# intExpr = intTerm, { ( '+' | '-' ) , intTerm };
-# int = [ '-' ], digit, { digit };
-# digit = '0' | '1' | '...' | '9';
-# string = '"', { stringElement }, '"';
-# stringElement = char | escape;
-# escape = '\"' | '\\';
-
 # Abstract syntax tree classes
 
 
@@ -138,6 +124,7 @@ def expectChar(e, c):
         raise ParsingError(c.position, "Expected '" + e + "'")
 
 
+# Grammar rule: stringExpr = stringTerm, { '+', stringTerm };
 def parseStringExpr(c):
     terms = [expect(parseStringTerm, c)]
     while not c.finished:
@@ -148,10 +135,20 @@ def parseStringExpr(c):
     return True, StringExpr(terms)
 
 
+# Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
 def parseStringTerm(c):
     return parseString(c)
 
 
+# Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
+# Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
+# Grammar rule: intFactor = int | '(', intExpr, ')';
+# Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
+# Grammar rule: int = [ '-' ], digit, { digit };
+# Grammar rule: digit = '0' | '1' | '...' | '9';
+
+
+# Grammar rule: string = '"', { stringElement }, '"';
 def parseString(c):
     # if c.startswith('"'):
         c.consume('"')
@@ -166,6 +163,8 @@ def parseString(c):
         # return False, "Expected '\"'"
 
 
+# Grammar rule: stringElement = char | escape;
+# Grammar rule: escape = '\"' | '\\';
 def parseStringElement(c):
     if c.startswith("\\"):
         c.consume("\\")
