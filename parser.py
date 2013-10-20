@@ -36,8 +36,9 @@ class Cursor(object):
 
 
 class LiteralParser:
-    def __init__(self, value):
+    def __init__(self, value, message=None):
         self.__value = value
+        self.__message = message
 
     def parse(self, c):
         origPos = c.position
@@ -47,6 +48,8 @@ class LiteralParser:
             else:
                 r = ParsingFailure(c.position, "Expected <" + self.__value + ">")
                 c.reset(origPos)
+                if self.__message is not None:
+                    r.reason = self.__message
                 return r
         return ParsingSuccess(self.__value, None)
 
@@ -68,8 +71,13 @@ class SequenceParser:
 
 
 class AlternativeParser:
-    def __init__(self, *elements):
-        self.__elements = elements
+    def __init__(self, *args):
+        if hasattr(args[-1], "parse"):
+            self.__elements = args
+            self.__message = None
+        else:
+            self.__elements = args[:-1]
+            self.__message = args[-1]
 
     def parse(self, c):
         origPos = c.position
@@ -81,7 +89,10 @@ class AlternativeParser:
             else:
                 c.reset(origPos)
                 results.append(r)
-        return furthestFailure(results)
+        f = furthestFailure(results)
+        if self.__message is not None:
+            f.reason = self.__message
+        return f
 
 
 class RepetitionParser:
@@ -424,6 +435,7 @@ class Digit:
             LiteralParser("7"),
             LiteralParser("8"),
             LiteralParser("9"),
+            "Expected 0-9"
         ).parse(c)
         if r.ok:
             return ParsingSuccess(Digit(r.value), r.failure)
@@ -442,7 +454,7 @@ class String:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser('"'), RepetitionParser(StringElement), LiteralParser('"')).parse(c)
+        r = SequenceParser(LiteralParser('"', "Expected opening quote"), RepetitionParser(StringElement), LiteralParser('"', "Expected closing quote")).parse(c)
         if r.ok:
             return ParsingSuccess(String(r.value[1]), r.failure)
         else:
@@ -505,6 +517,7 @@ class Char:
             LiteralParser("x"),
             LiteralParser("y"),
             LiteralParser("z"),
+            "Expected a-z"
         ).parse(c)
         if r.ok:
             return ParsingSuccess(Char(r.value), r.failure)
@@ -523,7 +536,7 @@ class Escape:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""))).parse(c)
+        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""), "Bad escape sequence")).parse(c)
         if r.ok:
             return ParsingSuccess(Escape(r.value[1]), r.failure)
         else:
@@ -548,22 +561,22 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('"abcdefghijklmnopqrstuvwxyz"', "abcdefghijklmnopqrstuvwxyz")
 
     def testEmptyInput(self):
-        self.expectSyntaxError('', 0, "Expected <\">")  # @todo Improve error message
+        self.expectSyntaxError('', 0, "Expected opening quote")
 
     def testForbidenChar(self):
-        self.expectSyntaxError('"A"', 1, "Expected <\">")  # @todo Improve error message
+        self.expectSyntaxError('"A"', 1, "Expected closing quote")  # @todo Improve error message
 
     def testStringWithEscapes(self):
         self.parseAndDump('"a\\"b\\\\c"', "a\"b\\c")
 
     def testUnterminatedString(self):
-        self.expectSyntaxError('"abc', 4, "Expected <\">")
+        self.expectSyntaxError('"abc', 4, "Expected closing quote")
 
     def testTrailingJunk(self):
         self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
 
     def testBadEscapeSequence(self):
-        self.expectSyntaxError('"ab\\c"', 4, "Expected <\\>")  # @todo Improve error message
+        self.expectSyntaxError('"ab\\c"', 4, "Bad escape sequence")
 
     def testStringAddition(self):
         self.parseAndDump('"abc"+"def"', "abcdef")
@@ -580,13 +593,13 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
 
     def testBadAddition_1(self):
-        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected <0>")  # @todo Improve error message
+        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected 0-9")
 
     def testBadAddition_2(self):
-        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected <\">")  # @todo Improve error message
+        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected opening quote")
 
     def testBadStringFactor(self):
-        self.expectSyntaxError('(1+1)*a', 6, "Expected <\">")  # @todo Expected int or string expression
+        self.expectSyntaxError('(1+1)*a', 6, "Expected opening quote")
 
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
