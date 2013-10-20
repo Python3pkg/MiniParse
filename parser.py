@@ -40,10 +40,15 @@ class LiteralParser:
         self.__value = value
 
     def parse(self, c):
-        if c.startswith(self.__value):
-            c.advance(len(self.__value))
-            return ParsingSuccess(self.__value)
-        return ParsingFailure(c.position, "Expected <" + self.__value + ">")
+        origPos = c.position
+        for v in self.__value:
+            if c.startswith(v):
+                c.advance(1)
+            else:
+                r = ParsingFailure(c.position, "Expected <" + self.__value + ">")
+                c.reset(origPos)
+                return r
+        return ParsingSuccess(self.__value, None)
 
 
 class SequenceParser:
@@ -52,15 +57,14 @@ class SequenceParser:
 
     def parse(self, c):
         origPos = c.position
-        values = []
+        results = []
         for element in self.__elements:
             r = element.parse(c)
-            if r.ok:
-                values.append(r.value)
-            else:
+            results.append(r)
+            if not r.ok:
                 c.reset(origPos)
-                return r
-        return ParsingSuccess(values)
+                return furthestFailure(results)
+        return ParsingSuccess([r.value for r in results], furthestFailure(results))
 
 
 class AlternativeParser:
@@ -69,16 +73,15 @@ class AlternativeParser:
 
     def parse(self, c):
         origPos = c.position
-        firstFailure = None
+        results = []
         for element in self.__elements:
             r = element.parse(c)
             if r.ok:
                 return r
             else:
-                if firstFailure is None:
-                    firstFailure = r
                 c.reset(origPos)
-        return firstFailure  # @todo Should we return the first failure, the last failure, or a compound failure?
+                results.append(r)
+        return furthestFailure(results)
 
 
 class RepetitionParser:
@@ -86,12 +89,15 @@ class RepetitionParser:
         self.__parser = parser
 
     def parse(self, c):
+        results = []
         values = []
         r = self.__parser.parse(c)
+        results.append(r)
         while r.ok:
             values.append(r.value)
             r = self.__parser.parse(c)
-        return ParsingSuccess(values)
+            results.append(r)
+        return ParsingSuccess(values, furthestFailure(results))
 
 
 class OptionalParser:
@@ -103,7 +109,23 @@ class OptionalParser:
         if r.ok:
             return r
         else:
-            return ParsingSuccess(None)
+            return ParsingSuccess(None, r)
+
+
+def furthestFailure(results):
+    failure = None
+    trueFailure = False
+    for r in results:
+        if r.ok:
+            if r.failure is not None:
+                if failure is None or r.failure.position > failure.position:
+                    failure = r.failure
+                    trueFailure = False
+        else:
+            if failure is None or r.position > failure.position or (not trueFailure and r.position >= failure.position):
+                failure = r
+                trueFailure = True
+    return failure
 
 
 class ParsingFailure:
@@ -114,13 +136,91 @@ class ParsingFailure:
 
 
 class ParsingSuccess:
-    def __init__(self, value):
+    def __init__(self, value, failure):
         self.ok = True
         self.value = value
+        self.failure = failure
 
 
 class SyntaxError(Exception):
     pass
+
+
+class ErrorHandling(unittest.TestCase):
+    def testErrorComesFromFirstLongestAlternative(self):
+        p = AlternativeParser(
+            LiteralParser("abx"),
+            LiteralParser("abcy"),
+            LiteralParser("abcw"),
+            LiteralParser("az")
+        )
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.position, 3)
+        self.assertEqual(r.reason, "Expected <abcy>")
+
+    def testLiteralParserTellsWhereItFailed(self):
+        p = LiteralParser("abcy")
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.position, 3)
+        self.assertEqual(r.reason, "Expected <abcy>")
+
+    def testOptionalParserTellsIfSomethingCouldHaveBeenBetter(self):
+        p = OptionalParser(LiteralParser("abcy"))
+        r = p.parse(Cursor("abcd"))
+        self.assertTrue(r.ok)
+        self.assertEqual(r.failure.position, 3)
+        self.assertEqual(r.failure.reason, "Expected <abcy>")
+
+    def testSequenceStartingWithOptional(self):
+        p = SequenceParser(
+            OptionalParser(LiteralParser("abcy")),
+            LiteralParser("az")
+        )
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.position, 3)
+        self.assertEqual(r.reason, "Expected <abcy>")
+
+    def testSequenceParserTellsIfSomethingCouldHaveBeenBetter(self):
+        p = SequenceParser(
+            OptionalParser(LiteralParser("abcy")),
+            LiteralParser("ab")
+        )
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.failure.position, 3)
+        self.assertEqual(r.failure.reason, "Expected <abcy>")
+
+    def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_OptionalIsLowerPriorityInCaseOfTie(self):
+        p = SequenceParser(
+            OptionalParser(LiteralParser("abcy")),
+            LiteralParser("abcz")
+        )
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.position, 3)
+        self.assertEqual(r.reason, "Expected <abcz>")
+
+    def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
+        p = RepetitionParser(
+            SequenceParser(
+                OptionalParser(LiteralParser("abcy")),
+                LiteralParser("ab")
+            )
+        )
+        r = p.parse(Cursor("abcd"))
+        self.assertEqual(r.failure.position, 3)
+        self.assertEqual(r.failure.reason, "Expected <abcy>")
+
+    def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
+        p = RepetitionParser(
+            AlternativeParser(
+                LiteralParser("ab"),
+                LiteralParser("acd")
+            )
+        )
+        r = p.parse(Cursor("ababacab"))
+        self.assertTrue(r.ok)
+        self.assertEqual(r.value, ["ab", "ab"])
+        self.assertEqual(r.failure.position, 6)
+        self.assertEqual(r.failure.reason, "Expected <acd>")
 
 
 def parse(s):
@@ -149,7 +249,7 @@ class StringExpr:
         if r.ok:
             terms = [r.value[0]]
             terms += [v[1] for v in r.value[1]]
-            return ParsingSuccess(StringExpr(terms))
+            return ParsingSuccess(StringExpr(terms), r.failure)
         else:
             return r
 
@@ -178,7 +278,7 @@ class StringTerm:
             if i is not None:
                 i = i[0]
             s = r.value[1]
-            return ParsingSuccess(StringTerm(i, s))
+            return ParsingSuccess(StringTerm(i, s), r.failure)
         else:
             return r
 
@@ -197,9 +297,9 @@ class StringFactor:
         r = AlternativeParser(String, SequenceParser(LiteralParser("("), StringExpr, LiteralParser(")"))).parse(c)
         if r.ok:
             if isinstance(r.value, String):
-                return ParsingSuccess(StringFactor(r.value))
+                return ParsingSuccess(StringFactor(r.value), r.failure)
             else:
-                return ParsingSuccess(StringFactor(r.value[1]))
+                return ParsingSuccess(StringFactor(r.value[1]), r.failure)
         else:
             return r
 
@@ -226,7 +326,7 @@ class IntTerm:
         if r.ok:
             factors = [("*", r.value[0])]
             factors += r.value[1]
-            return ParsingSuccess(IntTerm(factors))
+            return ParsingSuccess(IntTerm(factors), r.failure)
         else:
             return r
 
@@ -245,9 +345,9 @@ class IntFactor:
         r = AlternativeParser(Int, SequenceParser(LiteralParser("("), IntExpr, LiteralParser(")"))).parse(c)
         if r.ok:
             if isinstance(r.value, Int):
-                return ParsingSuccess(IntFactor(r.value))
+                return ParsingSuccess(IntFactor(r.value), r.failure)
             else:
-                return ParsingSuccess(IntFactor(r.value[1]))
+                return ParsingSuccess(IntFactor(r.value[1]), r.failure)
         else:
             return r
 
@@ -274,7 +374,7 @@ class IntExpr:
         if r.ok:
             terms = [("+", r.value[0])]
             terms += r.value[1]
-            return ParsingSuccess(IntExpr(terms))
+            return ParsingSuccess(IntExpr(terms), r.failure)
         else:
             return r
 
@@ -300,7 +400,7 @@ class Int:
         if r.ok:
             digits = [r.value[1]]
             digits += r.value[2]
-            return ParsingSuccess(Int(r.value[0], digits))
+            return ParsingSuccess(Int(r.value[0], digits), r.failure)
         else:
             return r
 
@@ -326,7 +426,7 @@ class Digit:
             LiteralParser("9"),
         ).parse(c)
         if r.ok:
-            return ParsingSuccess(Digit(r.value))
+            return ParsingSuccess(Digit(r.value), r.failure)
         else:
             return r
 
@@ -344,7 +444,7 @@ class String:
     def parse(c):
         r = SequenceParser(LiteralParser('"'), RepetitionParser(StringElement), LiteralParser('"')).parse(c)
         if r.ok:
-            return ParsingSuccess(String(r.value[1]))
+            return ParsingSuccess(String(r.value[1]), r.failure)
         else:
             return r
 
@@ -362,7 +462,7 @@ class StringElement:
     def parse(c):
         r = AlternativeParser(Char, Escape).parse(c)
         if r.ok:
-            return ParsingSuccess(StringElement(r.value))
+            return ParsingSuccess(StringElement(r.value), r.failure)
         else:
             return r
 
@@ -407,7 +507,7 @@ class Char:
             LiteralParser("z"),
         ).parse(c)
         if r.ok:
-            return ParsingSuccess(Char(r.value))
+            return ParsingSuccess(Char(r.value), r.failure)
         else:
             return r
 
@@ -425,7 +525,7 @@ class Escape:
     def parse(c):
         r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""))).parse(c)
         if r.ok:
-            return ParsingSuccess(Escape(r.value[1]))
+            return ParsingSuccess(Escape(r.value[1]), r.failure)
         else:
             return r
 
@@ -441,8 +541,7 @@ class TestCase(unittest.TestCase):
         exception = cm.exception
         actualPosition, actualMessage = exception.args
         self.assertIsInstance(exception, SyntaxError)
-        self.assertEqual(actualMessage, expectedMessage)
-        self.assertEqual(actualPosition, expectedPosition)
+        self.assertEqual((actualPosition, actualMessage), (expectedPosition, expectedMessage))
 
     def testSimpleString(self):
         self.parseAndDump('"abc"', "abc")
@@ -464,7 +563,7 @@ class TestCase(unittest.TestCase):
         self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
 
     def testBadEscapeSequence(self):
-        self.expectSyntaxError('"ab\\c"', 3, "Expected <\">")  # @todo Improve error message
+        self.expectSyntaxError('"ab\\c"', 4, "Expected <\\>")  # @todo Improve error message
 
     def testStringAddition(self):
         self.parseAndDump('"abc"+"def"', "abcdef")
@@ -480,9 +579,11 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('(1+1)*"abc"', "abcabc")
         self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
 
-    def testBadAddition(self):
-        self.expectSyntaxError('(1+a)*"abc"', 0, "Expected <\">")  # @todo Improve error message
-        self.expectSyntaxError('(a+1)*"abc"', 0, "Expected <\">")  # @todo Improve error message
+    def testBadAddition_1(self):
+        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected <0>")  # @todo Improve error message
+
+    def testBadAddition_2(self):
+        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected <\">")  # @todo Improve error message
 
     def testBadStringFactor(self):
         self.expectSyntaxError('(1+1)*a', 6, "Expected <\">")  # @todo Expected int or string expression
