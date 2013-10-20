@@ -53,13 +53,9 @@ class LiteralParser:
 
 
 class SequenceParser:
-    def __init__(self, *args):
-        if hasattr(args[-1], "parse"):
-            self.__elements = args
-            self.__expected = None
-        else:
-            self.__elements = args[:-1]
-            self.__expected = args[-1]
+    def __init__(self, elements, expected=None):
+        self.__elements = elements
+        self.__expected = expected
 
     def parse(self, c):
         origPos = c.position
@@ -77,13 +73,9 @@ class SequenceParser:
 
 
 class AlternativeParser:
-    def __init__(self, *args):
-        if hasattr(args[-1], "parse"):
-            self.__elements = args
-            self.__expected = None
-        else:
-            self.__elements = args[:-1]
-            self.__expected = args[-1]
+    def __init__(self, elements, expected=None):
+        self.__elements = elements
+        self.__expected = expected
 
     def parse(self, c):
         origPos = c.position
@@ -165,12 +157,12 @@ class SyntaxError(Exception):
 
 class ErrorHandling(unittest.TestCase):
     def testErrorComesFromFirstLongestAlternative(self):
-        p = AlternativeParser(
+        p = AlternativeParser([
             LiteralParser("abx"),
             LiteralParser("abcy"),
             LiteralParser("abcw"),
             LiteralParser("az")
-        )
+        ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
         self.assertEqual(r.expected, ["<abcy>"])
@@ -189,38 +181,38 @@ class ErrorHandling(unittest.TestCase):
         self.assertEqual(r.failure.expected, ["<abcy>"])
 
     def testSequenceStartingWithOptional(self):
-        p = SequenceParser(
+        p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("az")
-        )
+        ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
         self.assertEqual(r.expected, ["<abcy>"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter(self):
-        p = SequenceParser(
+        p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("ab")
-        )
+        ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
         self.assertEqual(r.failure.expected, ["<abcy>"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_OptionalIsLowerPriorityInCaseOfTie(self):
-        p = SequenceParser(
+        p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("abcz")
-        )
+        ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
         self.assertEqual(r.expected, ["<abcz>"])
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = RepetitionParser(
-            SequenceParser(
+            SequenceParser([
                 OptionalParser(LiteralParser("abcy")),
                 LiteralParser("ab")
-            )
+            ])
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
@@ -228,10 +220,10 @@ class ErrorHandling(unittest.TestCase):
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
         p = RepetitionParser(
-            AlternativeParser(
+            AlternativeParser([
                 LiteralParser("ab"),
                 LiteralParser("acd")
-            )
+            ])
         )
         r = p.parse(Cursor("ababacab"))
         self.assertTrue(r.ok)
@@ -262,7 +254,19 @@ class StringExpr:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(StringTerm, RepetitionParser(SequenceParser(LiteralParser("+"), StringTerm))).parse(c)
+        r = SequenceParser(
+            [
+                StringTerm,
+                RepetitionParser(
+                    SequenceParser(
+                        [
+                            LiteralParser("+"),
+                            StringTerm
+                        ]
+                    )
+                )
+            ]
+        ).parse(c)
         if r.ok:
             terms = [r.value[0]]
             terms += [v[1] for v in r.value[1]]
@@ -289,7 +293,19 @@ class StringTerm:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(OptionalParser(SequenceParser(IntTerm, LiteralParser("*"))), StringFactor).parse(c)
+        r = SequenceParser(
+            [
+                OptionalParser(
+                    SequenceParser(
+                        [
+                            IntTerm,
+                            LiteralParser("*")
+                        ]
+                    )
+                ),
+                StringFactor
+            ]
+        ).parse(c)
         if r.ok:
             i = r.value[0]
             if i is not None:
@@ -311,7 +327,18 @@ class StringFactor:
 
     @staticmethod
     def parse(c):
-        r = AlternativeParser(String, SequenceParser(LiteralParser("("), StringExpr, LiteralParser(")"))).parse(c)
+        r = AlternativeParser(
+            [
+                String,
+                SequenceParser(
+                    [
+                        LiteralParser("("),
+                        StringExpr,
+                        LiteralParser(")")
+                    ]
+                )
+            ]
+        ).parse(c)
         if r.ok:
             if isinstance(r.value, String):
                 return ParsingSuccess(StringFactor(r.value), r.failure)
@@ -339,7 +366,19 @@ class IntTerm:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(IntFactor, RepetitionParser(SequenceParser(AlternativeParser(LiteralParser("*"), LiteralParser("/")), IntFactor))).parse(c)
+        r = SequenceParser(
+            [
+                IntFactor,
+                RepetitionParser(
+                    SequenceParser(
+                        [
+                            AlternativeParser([LiteralParser("*"), LiteralParser("/")]),
+                            IntFactor
+                        ]
+                    )
+                )
+            ]
+        ).parse(c)
         if r.ok:
             factors = [("*", r.value[0])]
             factors += r.value[1]
@@ -359,7 +398,18 @@ class IntFactor:
 
     @staticmethod
     def parse(c):
-        r = AlternativeParser(Int, SequenceParser(LiteralParser("("), IntExpr, LiteralParser(")"))).parse(c)
+        r = AlternativeParser(
+            [
+                Int,
+                SequenceParser(
+                    [
+                        LiteralParser("("),
+                        IntExpr,
+                        LiteralParser(")")
+                    ]
+                )
+            ]
+        ).parse(c)
         if r.ok:
             if isinstance(r.value, Int):
                 return ParsingSuccess(IntFactor(r.value), r.failure)
@@ -387,7 +437,19 @@ class IntExpr:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(IntTerm, RepetitionParser(SequenceParser(AlternativeParser(LiteralParser("+"), LiteralParser("-")), IntTerm))).parse(c)
+        r = SequenceParser(
+            [
+                IntTerm,
+                RepetitionParser(
+                    SequenceParser(
+                        [
+                            AlternativeParser([LiteralParser("+"), LiteralParser("-")]),
+                            IntTerm
+                        ]
+                    )
+                )
+            ]
+        ).parse(c)
         if r.ok:
             terms = [("+", r.value[0])]
             terms += r.value[1]
@@ -413,7 +475,13 @@ class Int:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(OptionalParser(LiteralParser("-")), Digit, RepetitionParser(Digit)).parse(c)
+        r = SequenceParser(
+            [
+                OptionalParser(LiteralParser("-")),
+                Digit,
+                RepetitionParser(Digit)
+            ]
+        ).parse(c)
         if r.ok:
             digits = [r.value[1]]
             digits += r.value[2]
@@ -431,16 +499,18 @@ class Digit:
     @staticmethod
     def parse(c):
         r = AlternativeParser(
-            LiteralParser("0"),
-            LiteralParser("1"),
-            LiteralParser("2"),
-            LiteralParser("3"),
-            LiteralParser("4"),
-            LiteralParser("5"),
-            LiteralParser("6"),
-            LiteralParser("7"),
-            LiteralParser("8"),
-            LiteralParser("9"),
+            [
+                LiteralParser("0"),
+                LiteralParser("1"),
+                LiteralParser("2"),
+                LiteralParser("3"),
+                LiteralParser("4"),
+                LiteralParser("5"),
+                LiteralParser("6"),
+                LiteralParser("7"),
+                LiteralParser("8"),
+                LiteralParser("9")
+            ],
             ["0-9"]
         ).parse(c)
         if r.ok:
@@ -460,7 +530,13 @@ class String:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser('"', ["opening quote"]), RepetitionParser(StringElement), LiteralParser('"', ["closing quote"])).parse(c)
+        r = SequenceParser(
+            [
+                LiteralParser('"', ["opening quote"]),
+                RepetitionParser(StringElement),
+                LiteralParser('"', ["closing quote"])
+            ]
+        ).parse(c)
         if r.ok:
             return ParsingSuccess(String(r.value[1]), r.failure)
         else:
@@ -478,7 +554,7 @@ class StringElement:
 
     @staticmethod
     def parse(c):
-        r = AlternativeParser(Char, Escape).parse(c)
+        r = AlternativeParser([Char, Escape]).parse(c)
         if r.ok:
             return ParsingSuccess(StringElement(r.value), r.failure)
         else:
@@ -497,33 +573,35 @@ class Char:
     @staticmethod
     def parse(c):
         r = AlternativeParser(
-            LiteralParser("a"),
-            LiteralParser("b"),
-            LiteralParser("c"),
-            LiteralParser("d"),
-            LiteralParser("e"),
-            LiteralParser("f"),
-            LiteralParser("g"),
-            LiteralParser("h"),
-            LiteralParser("i"),
-            LiteralParser("j"),
-            LiteralParser("k"),
-            LiteralParser("l"),
-            LiteralParser("m"),
-            LiteralParser("n"),
-            LiteralParser("o"),
-            LiteralParser("p"),
-            LiteralParser("q"),
-            LiteralParser("r"),
-            LiteralParser("s"),
-            LiteralParser("t"),
-            LiteralParser("u"),
-            LiteralParser("v"),
-            LiteralParser("w"),
-            LiteralParser("x"),
-            LiteralParser("y"),
-            LiteralParser("z"),
-            "Expected a-z"
+            [
+                LiteralParser("a"),
+                LiteralParser("b"),
+                LiteralParser("c"),
+                LiteralParser("d"),
+                LiteralParser("e"),
+                LiteralParser("f"),
+                LiteralParser("g"),
+                LiteralParser("h"),
+                LiteralParser("i"),
+                LiteralParser("j"),
+                LiteralParser("k"),
+                LiteralParser("l"),
+                LiteralParser("m"),
+                LiteralParser("n"),
+                LiteralParser("o"),
+                LiteralParser("p"),
+                LiteralParser("q"),
+                LiteralParser("r"),
+                LiteralParser("s"),
+                LiteralParser("t"),
+                LiteralParser("u"),
+                LiteralParser("v"),
+                LiteralParser("w"),
+                LiteralParser("x"),
+                LiteralParser("y"),
+                LiteralParser("z")
+            ],
+            ["a-z"]
         ).parse(c)
         if r.ok:
             return ParsingSuccess(Char(r.value), r.failure)
@@ -542,7 +620,13 @@ class Escape:
 
     @staticmethod
     def parse(c):
-        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\"")), ["escape sequence"]).parse(c)
+        r = SequenceParser(
+            [
+                LiteralParser("\\"),
+                AlternativeParser([LiteralParser("\\"), LiteralParser("\"")])
+            ],
+            ["escape sequence"]
+        ).parse(c)
         if r.ok:
             return ParsingSuccess(Escape(r.value[1]), r.failure)
         else:
