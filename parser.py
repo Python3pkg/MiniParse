@@ -34,24 +34,22 @@ def containerOfMany(name):
     return C
 
 
+def containerOfOne(name, left, right):
+    class C:
+        def __init__(self, value):
+            self.__value = value
+
+        def dump(self):
+            return left + self.__value + right
+
+    C.__name__ = name
+    return C
+
+
 StringExpr = containerOfMany("StringExpr")
 String = containerOfMany("String")
-
-
-class Char:
-    def __init__(self, value):
-        self.value = value
-
-    def dump(self):
-        return "'" + self.value + "'"
-
-
-class Escape:
-    def __init__(self, value):
-        self.value = value
-
-    def dump(self):
-        return "<" + self.value + ">"
+Char = containerOfOne("Char", "'", "'")
+Escape = containerOfOne("Escape", "<", ">")
 
 
 # Parser
