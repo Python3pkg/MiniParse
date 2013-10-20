@@ -175,13 +175,14 @@ class StringTerm:
 class StringFactor:
     @staticmethod
     def parse(c):
+        # @todo Alternative
         return String.parse(c)
 
 
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
 class IntTerm:
     def __init__(self, factors):
-        assert all(isinstance(factor, (Int, IntExpr)) for factor in factors)
+        assert all(isinstance(factor, IntFactor) for factor in factors)
         self.__factors = factors
 
     def compute(self):
@@ -192,6 +193,7 @@ class IntTerm:
 
     @staticmethod
     def parse(c):
+        # @todo '/'
         r = SequenceParser(IntFactor, RepetitionParser(SequenceParser(LiteralParser("*"), IntFactor))).parse(c)
         if r.ok:
             factors = [r.value[0]]
@@ -203,14 +205,21 @@ class IntTerm:
 
 # Grammar rule: intFactor = int | '(', intExpr, ')';
 class IntFactor:
+    def __init__(self, real):
+        assert isinstance(real, (Int, IntExpr))
+        self.__real = real
+
+    def compute(self):
+        return self.__real.compute()
+
     @staticmethod
     def parse(c):
         r = AlternativeParser(Int, SequenceParser(LiteralParser("("), IntExpr, LiteralParser(")"))).parse(c)
         if r.ok:
             if r.match is Int:
-                return r
+                return ParsingSuccess(IntFactor(r.value))
             else:
-                return ParsingSuccess(r.value[1])
+                return ParsingSuccess(IntFactor(r.value[1]))
         else:
             return r
 
@@ -229,6 +238,7 @@ class IntExpr:
 
     @staticmethod
     def parse(c):
+        # @todo '-'
         r = SequenceParser(IntTerm, RepetitionParser(SequenceParser(LiteralParser("+"), IntTerm))).parse(c)
         if r.ok:
             terms = [r.value[0]]
@@ -288,7 +298,7 @@ class Digit:
 # Grammar rule: string = '"', { stringElement }, '"';
 class String:
     def __init__(self, elements):
-        assert all(isinstance(element, (Char, Escape)) for element in elements)
+        assert all(isinstance(element, StringElement) for element in elements)
         self.__elements = elements
 
     def dump(self):
@@ -305,9 +315,20 @@ class String:
 
 # Grammar rule: stringElement = char | escape;
 class StringElement:
+    def __init__(self, real):
+        assert isinstance(real, (Char, Escape))
+        self.__real = real
+
+    def dump(self):
+        return self.__real.dump()
+
     @staticmethod
     def parse(c):
-        return AlternativeParser(Char, Escape).parse(c)
+        r = AlternativeParser(Char, Escape).parse(c)
+        if r.ok:
+            return ParsingSuccess(StringElement(r.value))
+        else:
+            return r
 
 
 # Grammar rule: char = 'a' | 'b' | '...' | 'z';
