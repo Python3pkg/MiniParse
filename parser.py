@@ -14,6 +14,25 @@ class StringExpr:
         return "".join(t.dump() for t in self.__terms)
 
 
+class StringTerm:
+    def __init__(self, i, s):
+        self.__i = i
+        self.__s = s
+
+    def dump(self):
+        s = self.__s.dump()
+        i = self.__i.compute()
+        return i * s
+
+
+class Int:
+    def __init__(self, value):
+        self.__value = value
+
+    def compute(self):
+        return self.__value
+
+
 class String:
     def __init__(self, elements):
         self.__elements = elements
@@ -114,15 +133,41 @@ def parseStringExpr(c):
 
 # Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
 def parseStringTerm(c):
-    return parseString(c)
+    ok, i = parseIntTerm(c)
+    if ok:
+        c.discardSpaces()
+        expectChar('*', c)
+        c.discardSpaces()
+        s = expect(parseStringFactor, c)
+        return True, StringTerm(i, s)
+    else:
+        return parseStringFactor(c)
 
 
 # Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
+def parseStringFactor(c):
+    return parseString(c)
+
+
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
+def parseIntTerm(c):
+    return parseInt(c)
+
+
 # Grammar rule: intFactor = int | '(', intExpr, ')';
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
+
+
 # Grammar rule: int = [ '-' ], digit, { digit };
 # Grammar rule: digit = '0' | '1' | '...' | '9';
+def parseInt(c):
+    digits = ""
+    while c.get(1) in "0123456789":
+        digits += c.advance(1)
+    if len(digits) == 0:
+        return False, "Expected a digit"
+    else:
+        return True, Int(int(digits))
 
 
 # Grammar rule: string = '"', { stringElement }, '"';
@@ -185,6 +230,9 @@ class TestCase(unittest.TestCase):
 
     def testStringAddition(self):
         self.parseDump('"abc" + "def"', "abcdef")
+
+    def testStringMultiplication(self):
+        self.parseDump('2 * "abc"', "abcabc")
 
 
 if __name__ == "__main__":  # pragma no branch
