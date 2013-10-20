@@ -92,6 +92,18 @@ class RepetitionParser:
         return ParsingSuccess(values)
 
 
+class OptionalParser:
+    def __init__(self, parser):
+        self.__parser = parser
+
+    def parse(self, c):
+        r = self.__parser.parse(c)
+        if r.ok:
+            return r
+        else:
+            return ParsingSuccess(None)
+
+
 class ParsingFailure:
     def __init__(self, position, reason):
         self.ok = False
@@ -158,17 +170,15 @@ class StringTerm:
 
     @staticmethod
     def parse(c):
-        # @todo OptionalParser
-        rInt = SequenceParser(IntTerm, LiteralParser("*")).parse(c)
-        if rInt.ok:
-            i = rInt.value[0]
+        r = SequenceParser(OptionalParser(SequenceParser(IntTerm, LiteralParser("*"))), StringFactor).parse(c)
+        if r.ok:
+            i = r.value[0]
+            if i is not None:
+                i = i[0]
+            s = r.value[1]
+            return ParsingSuccess(StringTerm(i, s))
         else:
-            i = None
-        rString = StringFactor.parse(c)
-        if rString.ok:
-            return ParsingSuccess(StringTerm(i, rString.value))
-        else:
-            return rString
+            return r
 
 
 # Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
@@ -250,21 +260,26 @@ class IntExpr:
 
 # Grammar rule: int = [ '-' ], digit, { digit };
 class Int:
-    def __init__(self, digits):
+    def __init__(self, negativeSign, digits):
+        assert negativeSign is None or negativeSign is "-"
         assert all(isinstance(digit, Digit) for digit in digits)
+        self.__negativeSign = negativeSign
         self.__digits = digits
 
     def compute(self):
-        return int("".join(d.value for d in self.__digits))
+        v = int("".join(d.value for d in self.__digits))
+        if self.__negativeSign:
+            return -v
+        else:
+            return v
 
     @staticmethod
     def parse(c):
-        # @todo Use an OptionalParser for the '-'
-        r = SequenceParser(Digit, RepetitionParser(Digit)).parse(c)
+        r = SequenceParser(OptionalParser(LiteralParser("-")), Digit, RepetitionParser(Digit)).parse(c)
         if r.ok:
-            digits = [r.value[0]]
-            digits += r.value[1]
-            return ParsingSuccess(Int(digits))
+            digits = [r.value[1]]
+            digits += r.value[2]
+            return ParsingSuccess(Int(r.value[0], digits))
         else:
             return r
 
@@ -447,6 +462,9 @@ class TestCase(unittest.TestCase):
     def testBadAddition(self):
         self.expectSyntaxError('(1+a)*"abc"', 0, "Expected <\">")  # @todo Improve error message
         self.expectSyntaxError('(a+1)*"abc"', 0, "Expected <\">")  # @todo Improve error message
+
+    def testNegativeNumbers(self):
+        self.parseAndDump('(2+-1)*"abc"', "abc")
 
 
 if __name__ == "__main__":  # pragma no branch
