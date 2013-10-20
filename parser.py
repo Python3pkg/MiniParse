@@ -20,37 +20,36 @@ import unittest
 # Abstract syntax tree classes
 
 
-def containerOfMany(name):
-    class C:
-        def __init__(self, contents):
-            self.__contents = contents
+class StringExpr:
+    def __init__(self, terms):
+        self.__terms = terms
 
-        def dump(self):
-            if len(self.__contents) == 1:
-                return self.__contents[0].dump()
-            else:
-                return name + "(" + ", ".join(c.dump() for c in self.__contents) + ")"
-
-    C.__name__ = name
-    return C
+    def dump(self):
+        return "".join(t.dump() for t in self.__terms)
 
 
-def containerOfOne(name, left, right):
-    class C:
-        def __init__(self, value):
-            self.__value = value
+class String:
+    def __init__(self, elements):
+        self.__elements = elements
 
-        def dump(self):
-            return left + self.__value + right
-
-    C.__name__ = name
-    return C
+    def dump(self):
+        return "".join(e.dump() for e in self.__elements)
 
 
-StringExpr = containerOfMany("StringExpr")
-String = containerOfMany("String")
-Char = containerOfOne("Char", "'", "'")
-Escape = containerOfOne("Escape", "<", ">")
+class Char:
+    def __init__(self, value):
+        self.__value = value
+
+    def dump(self):
+        return self.__value
+
+
+class Escape:
+    def __init__(self, value):
+        self.__value = value
+
+    def dump(self):
+        return self.__value
 
 
 # Parser
@@ -194,10 +193,10 @@ class TestCase(unittest.TestCase):
         self.assertEqual(actualMessage, expectedMessage)
 
     def testSimpleString(self):
-        self.parseDump('"abc"', "String('a', 'b', 'c')")
+        self.parseDump('"abc"', "abc")
 
     def testStringWithEscapes(self):
-        self.parseDump('"a\\"b\\\\c"', "String('a', <\">, 'b', <\\>, 'c')")
+        self.parseDump('"a\\"b\\\\c"', "a\"b\\c")
 
     def testUnterminatedString(self):
         self.expectParsingError('"abc', 4, "Hit EOF while parsing string")
@@ -209,7 +208,7 @@ class TestCase(unittest.TestCase):
         self.expectParsingError('"ab\\c"', 4, "Expected '\"' or '\\'")
 
     def testStringAddition(self):
-        self.parseDump('"abc" + "def"', "StringExpr(String('a', 'b', 'c'), String('d', 'e', 'f'))")
+        self.parseDump('"abc" + "def"', "abcdef")
 
 
 if __name__ == "__main__":  # pragma no branch
