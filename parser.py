@@ -43,7 +43,7 @@ class LiteralParser:
         if c.startswith(self.__value):
             c.advance(len(self.__value))
             return ParsingSuccess(self.__value)
-        return ParsingFailure("Expected '" + self.__ + "'")
+        return ParsingFailure("Expected literal <" + self.__value + ">")
 
 
 class SequenceParser:
@@ -63,19 +63,19 @@ class SequenceParser:
         return ParsingSuccess(values)
 
 
-# class AlternativeParser:
-#     def __init__(self, *elements):
-#         self.__elements = elements
+class AlternativeParser:
+    def __init__(self, *elements):
+        self.__elements = elements
 
-#     def parse(self, c):
-#         origPos = c.position
-#         for element in self.__elements:
-#             r = element.parse(c)
-#             if r.ok:
-#                 return r
-#             else:
-#                 c.reset(origPos)
-#         return ParsingFailure("Expected something")
+    def parse(self, c):
+        origPos = c.position
+        for element in self.__elements:
+            r = element.parse(c)
+            if r.ok:
+                return r
+            else:
+                c.reset(origPos)
+        return ParsingFailure("Expected something in")
 
 
 class RepetitionParser:
@@ -231,25 +231,20 @@ class String:
 
 
 def parseString(c):
-    if c.startswith('"'):
-        c.advance(1)
-        elements = []
-        r = parseStringElement(c)
-        while r.ok:
-            elements.append(r.value)
-            r = parseStringElement(c)
-        if r.reason != "Normal string end":
-            return r
-        if c.startswith('"'):
-            c.advance(1)
-            return ParsingSuccess(String(elements))
-        else:
-            return ParsingFailure("Expected closing quote '\"'")
+    r = SequenceParser(LiteralParser('"'), RepetitionParser(StringElement), LiteralParser('"')).parse(c)
+    if r.ok:
+        return ParsingSuccess(String(r.value[1]))
     else:
-        return ParsingFailure("Expected opening quote '\"'")
+        return r
 
 
 # Grammar rule: stringElement = char | escape;
+class StringElement:
+    @staticmethod
+    def parse(c):
+        return AlternativeParser(Char, Escape).parse(c)
+
+
 # Grammar rule: escape = '\"' | '\\';
 class Char:
     def __init__(self, value):
@@ -257,6 +252,15 @@ class Char:
 
     def dump(self):
         return self.__value
+
+    @staticmethod
+    def parse(c):
+        if c.finished:
+            raise SyntaxError(c.position, "Unexpected end of file")
+        elif c.get(1) in ("\"", "\\"):
+            return ParsingFailure("Unexpected <" + c.get(1) + ">")
+        else:
+            return ParsingSuccess(Char(c.advance(1)))
 
 
 class Escape:
@@ -266,20 +270,15 @@ class Escape:
     def dump(self):
         return self.__value
 
-
-def parseStringElement(c):
-    if c.startswith("\\"):
-        if c.get(2) in ('\\"', '\\\\'):
-            c.advance(1)
-            return ParsingSuccess(Escape(c.advance(1)))
+    @staticmethod
+    def parse(c):
+        r = SequenceParser(LiteralParser("\\"), AlternativeParser(LiteralParser("\\"), LiteralParser("\""))).parse(c)
+        if r.ok:
+            return ParsingSuccess(Escape(r.value[1]))
+        elif LiteralParser("\\").parse(c).ok:
+            raise SyntaxError(c.position - 1, "Bad escape sequence")
         else:
-            return ParsingFailure("Bad escape sequence")
-    elif c.startswith('"'):
-        return ParsingFailure("Normal string end")
-    elif c.finished:
-        return ParsingFailure("Unexpected end of file")
-    else:
-        return ParsingSuccess(Char(c.advance(1)))
+            return r
 
 
 class TestCase(unittest.TestCase):
@@ -293,8 +292,8 @@ class TestCase(unittest.TestCase):
         exception = cm.exception
         actualPosition, actualMessage = exception.args
         self.assertIsInstance(exception, SyntaxError)
-        self.assertEqual(actualPosition, expectedPosition)
         self.assertEqual(actualMessage, expectedMessage)
+        self.assertEqual(actualPosition, expectedPosition)
 
     def testSimpleString(self):
         self.parseDump('"abc"', "abc")
