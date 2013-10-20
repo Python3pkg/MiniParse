@@ -3,63 +3,6 @@
 import unittest
 
 
-# Abstract syntax tree classes
-
-
-class StringExpr:
-    def __init__(self, terms):
-        self.__terms = terms
-
-    def dump(self):
-        return "".join(t.dump() for t in self.__terms)
-
-
-class StringTerm:
-    def __init__(self, i, s):
-        self.__i = i
-        self.__s = s
-
-    def dump(self):
-        s = self.__s.dump()
-        i = self.__i.compute()
-        return i * s
-
-
-class Int:
-    def __init__(self, value):
-        self.__value = value
-
-    def compute(self):
-        return self.__value
-
-
-class String:
-    def __init__(self, elements):
-        self.__elements = elements
-
-    def dump(self):
-        return "".join(e.dump() for e in self.__elements)
-
-
-class Char:
-    def __init__(self, value):
-        self.__value = value
-
-    def dump(self):
-        return self.__value
-
-
-class Escape:
-    def __init__(self, value):
-        self.__value = value
-
-    def dump(self):
-        return self.__value
-
-
-# Parser
-
-
 class ParsingError(Exception):
     pass
 
@@ -121,6 +64,14 @@ def expectChar(e, c):
 
 
 # Grammar rule: stringExpr = stringTerm, { '+', stringTerm };
+class StringExpr:
+    def __init__(self, terms):
+        self.__terms = terms
+
+    def dump(self):
+        return "".join(t.dump() for t in self.__terms)
+
+
 def parseStringExpr(c):
     terms = [expect(parseStringTerm, c)]
     while not c.finished:
@@ -132,6 +83,17 @@ def parseStringExpr(c):
 
 
 # Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
+class StringTerm:
+    def __init__(self, i, s):
+        self.__i = i
+        self.__s = s
+
+    def dump(self):
+        s = self.__s.dump()
+        i = self.__i.compute()
+        return i * s
+
+
 def parseStringTerm(c):
     ok, i = parseIntTerm(c)
     if ok:
@@ -151,15 +113,27 @@ def parseStringFactor(c):
 
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
 def parseIntTerm(c):
-    return parseInt(c)
+    return parseIntFactor(c)
 
 
 # Grammar rule: intFactor = int | '(', intExpr, ')';
+def parseIntFactor(c):
+    return parseInt(c)
+
+
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
 
 
 # Grammar rule: int = [ '-' ], digit, { digit };
 # Grammar rule: digit = '0' | '1' | '...' | '9';
+class Int:
+    def __init__(self, value):
+        self.__value = value
+
+    def compute(self):
+        return self.__value
+
+
 def parseInt(c):
     digits = ""
     while c.get(1) in "0123456789":
@@ -171,6 +145,14 @@ def parseInt(c):
 
 
 # Grammar rule: string = '"', { stringElement }, '"';
+class String:
+    def __init__(self, elements):
+        self.__elements = elements
+
+    def dump(self):
+        return "".join(e.dump() for e in self.__elements)
+
+
 def parseString(c):
     # if c.startswith('"'):
         expectChar('"', c)
@@ -187,6 +169,22 @@ def parseString(c):
 
 # Grammar rule: stringElement = char | escape;
 # Grammar rule: escape = '\"' | '\\';
+class Char:
+    def __init__(self, value):
+        self.__value = value
+
+    def dump(self):
+        return self.__value
+
+
+class Escape:
+    def __init__(self, value):
+        self.__value = value
+
+    def dump(self):
+        return self.__value
+
+
 def parseStringElement(c):
     if c.startswith("\\"):
         expectChar('\\', c)
