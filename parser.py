@@ -109,11 +109,11 @@ class SyntaxError(Exception):
 
 def parse(s):
     c = Cursor(s)
-    r = parseStringExpr(c)
+    r = StringExpr.parse(c)
     if not r.ok:
         raise SyntaxError(c.position, r.reason)
     elif not c.finished:
-        raise SyntaxError(c.position, "WTF")
+        raise SyntaxError(c.position, "Expected <+>")
     else:
         return r.value
 
@@ -126,21 +126,15 @@ class StringExpr:
     def dump(self):
         return "".join(t.dump() for t in self.__terms)
 
-
-def parseStringExpr(c):
-    terms = []
-    termParsingResult = parseStringTerm(c)
-    while termParsingResult.ok:
-        terms.append(termParsingResult.value)
-        if c.finished:
+    @staticmethod
+    def parse(c):
+        r = SequenceParser(StringTerm, RepetitionParser(SequenceParser(LiteralParser("+"), StringTerm))).parse(c)
+        if r:
+            terms = [r.value[0]]
+            terms += [v[1] for v in r.value[1]]
             return ParsingSuccess(StringExpr(terms))
         else:
-            if c.startswith("+"):
-                c.advance(1)
-                termParsingResult = parseStringTerm(c)
-            else:
-                return ParsingFailure("Expected '+'")
-    return termParsingResult
+            return r
 
 
 # Grammar rule: stringTerm = [ intTerm, '*' ], stringFactor;
@@ -154,19 +148,22 @@ class StringTerm:
         i = self.__i.compute()
         return i * s
 
-
-def parseStringTerm(c):
-    rInt = SequenceParser(IntTerm, LiteralParser("*")).parse(c)
-    rString = parseStringFactor(c)
-    if rInt.ok and rString.ok:
-        return ParsingSuccess(StringTerm(rInt.value[0], rString.value))
-    else:
-        return rString
+    @staticmethod
+    def parse(c):
+        # @todo OptionalParser
+        rInt = SequenceParser(IntTerm, LiteralParser("*")).parse(c)
+        rString = StringFactor.parse(c)
+        if rInt.ok and rString.ok:
+            return ParsingSuccess(StringTerm(rInt.value[0], rString.value))
+        else:
+            return rString
 
 
 # Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
-def parseStringFactor(c):
-    return parseString(c)
+class StringFactor:
+    @staticmethod
+    def parse(c):
+        return String.parse(c)
 
 
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
@@ -195,7 +192,7 @@ class IntTerm:
 class IntFactor:
     @staticmethod
     def parse(c):
-        return parseInt(c)
+        return Int.parse(c)
 
 
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
@@ -210,15 +207,27 @@ class Int:
     def compute(self):
         return self.__value
 
-
-def parseInt(c):
-    digits = ""
-    while c.get(1) in "0123456789":
-        digits += c.advance(1)
-    if len(digits) == 0:
-        return ParsingFailure("Expected a digit")
-    else:
-        return ParsingSuccess(Int(int(digits)))
+    @staticmethod
+    def parse(c):
+        digitParser = AlternativeParser(
+            LiteralParser("0"),
+            LiteralParser("1"),
+            LiteralParser("2"),
+            LiteralParser("3"),
+            LiteralParser("4"),
+            LiteralParser("5"),
+            LiteralParser("6"),
+            LiteralParser("7"),
+            LiteralParser("8"),
+            LiteralParser("9"),
+        )
+        r = SequenceParser(digitParser, RepetitionParser(digitParser)).parse(c)
+        if r.ok:
+            digits = [r.value[0]]
+            digits += r.value[1]
+            return ParsingSuccess(Int(int("".join(digits))))
+        else:
+            return r
 
 
 # Grammar rule: string = '"', { stringElement }, '"';
@@ -229,13 +238,13 @@ class String:
     def dump(self):
         return "".join(e.dump() for e in self.__elements)
 
-
-def parseString(c):
-    r = SequenceParser(LiteralParser('"'), RepetitionParser(StringElement), LiteralParser('"')).parse(c)
-    if r.ok:
-        return ParsingSuccess(String(r.value[1]))
-    else:
-        return r
+    @staticmethod
+    def parse(c):
+        r = SequenceParser(LiteralParser('"'), RepetitionParser(StringElement), LiteralParser('"')).parse(c)
+        if r.ok:
+            return ParsingSuccess(String(r.value[1]))
+        else:
+            return r
 
 
 # Grammar rule: stringElement = char | escape;
@@ -282,7 +291,7 @@ class Escape:
 
 
 class TestCase(unittest.TestCase):
-    def parseDump(self, input, expectedOutput):
+    def parseAndDump(self, input, expectedOutput):
         actualOutput = parse(input).dump()
         self.assertEqual(actualOutput, expectedOutput)
 
@@ -296,27 +305,28 @@ class TestCase(unittest.TestCase):
         self.assertEqual(actualPosition, expectedPosition)
 
     def testSimpleString(self):
-        self.parseDump('"abc"', "abc")
+        self.parseAndDump('"abc"', "abc")
 
     def testStringWithEscapes(self):
-        self.parseDump('"a\\"b\\\\c"', "a\"b\\c")
+        self.parseAndDump('"a\\"b\\\\c"', "a\"b\\c")
 
     def testUnterminatedString(self):
         self.expectSyntaxError('"abc', 4, "Unexpected end of file")
 
     def testTrailingJunk(self):
-        self.expectSyntaxError('"abc"xxx', 5, "Expected '+'")
+        self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
 
     def testBadEscapeSequence(self):
         self.expectSyntaxError('"ab\\c"', 3, "Bad escape sequence")
 
     def testStringAddition(self):
-        self.parseDump('"abc"+"def"', "abcdef")
+        self.parseAndDump('"abc"+"def"', "abcdef")
 
     def testStringMultiplication(self):
-        self.parseDump('2*"abc"', "abcabc")
-        self.parseDump('2*2*"abc"', "abcabcabcabc")
-        self.parseDump('2*2*2*"abc"', "abcabcabcabcabcabcabcabc")
+        self.parseAndDump('2*"abc"', "abcabc")
+        self.parseAndDump('2*2*"abc"', "abcabcabcabc")
+        self.parseAndDump('2*2*2*"abc"', "abcabcabcabcabcabcabcabc")
+        self.parseAndDump('10*"a"', "aaaaaaaaaa")
 
 
 if __name__ == "__main__":  # pragma no branch
