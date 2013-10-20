@@ -18,12 +18,24 @@ import unittest
 
 # Abstract syntax tree classes
 
-class String:
-    def __init__(self, elements):
-        self.elements = elements
 
-    def dump(self):
-        return "String(" + ", ".join(e.dump() for e in self.elements) + ")"
+def containerOfMany(name):
+    class C:
+        def __init__(self, contents):
+            self.__contents = contents
+
+        def dump(self):
+            if len(self.__contents) == 1:
+                return self.__contents[0].dump()
+            else:
+                return name + "(" + ", ".join(c.dump() for c in self.__contents) + ")"
+
+    C.__name__ = name
+    return C
+
+
+StringExpr = containerOfMany("StringExpr")
+String = containerOfMany("String")
 
 
 class Char:
@@ -84,6 +96,10 @@ class Cursor(object):
     def position(self):
         return self.__i
 
+    def consumeSpaces(self):
+        while self.__get(1) in (" ", "\t"):
+            self.advance(1)
+
 
 class CursorTestCase(unittest.TestCase):
     def setUp(self):
@@ -106,9 +122,8 @@ class CursorTestCase(unittest.TestCase):
 
 def parse(s):
     c = Cursor(s)
-    expr = expect(parseStringExpr, c)
-    assert c.finished
-    return expr
+    return expect(parseStringExpr, c)
+
 
 def expect(parse, c):
     ok, exprOrError = parse(c)
@@ -117,8 +132,27 @@ def expect(parse, c):
     else:
         raise ParsingError(c.position, exprOrError)
 
+
+def expectChar(e, c):
+    if c.startswith(e):
+        c.consume(e)
+    else:
+        raise ParsingError(c.position, "Expected '" + e + "'")
+
+
 def parseStringExpr(c):
+    terms = [expect(parseStringTerm, c)]
+    while not c.finished:
+        c.consumeSpaces()
+        expectChar("+", c)
+        c.consumeSpaces()
+        terms.append(expect(parseStringTerm, c))
+    return True, StringExpr(terms)
+
+
+def parseStringTerm(c):
     return parseString(c)
+
 
 def parseString(c):
     # if c.startswith('"'):
@@ -132,6 +166,7 @@ def parseString(c):
         return True, String(elements)
     # else:
         # return False, "Expected '\"'"
+
 
 def parseStringElement(c):
     if c.startswith("\\"):
@@ -168,8 +203,14 @@ class TestCase(unittest.TestCase):
     def testUnterminatedString(self):
         self.expectParsingError('"abc', 4, "Hit EOF while parsing string")
 
+    def testTrailingJunk(self):
+        self.expectParsingError('"abc"xxx', 5, "Expected '+'")
+
     def testBadEscapeSequence(self):
         self.expectParsingError('"ab\\c"', 4, "Expected '\"' or '\\'")
+
+    def testStringAddition(self):
+        self.parseDump('"abc" + "def"', "StringExpr(String('a', 'b', 'c'), String('d', 'e', 'f'))")
 
 
 if __name__ == "__main__":  # pragma no branch
