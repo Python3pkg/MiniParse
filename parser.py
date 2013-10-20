@@ -73,7 +73,7 @@ class AlternativeParser:
         for element in self.__elements:
             r = element.parse(c)
             if r.ok:
-                r.match = element  # @todo Could we avoid that? It's convinient when the Alternativ is top-level in the rule, but lost anyway when the alternative in embeded in the rule
+                r.match = element  # @todo Could we avoid that? It's convinient when the Alternative is top-level in the rule, but lost anyway when the alternative in embeded in the rule
                 return r
             else:
                 if firstFailure is None:
@@ -208,22 +208,25 @@ class StringFactor:
 # Grammar rule: intTerm = intFactor, { ( '*' | '/' ), intFactor };
 class IntTerm:
     def __init__(self, factors):
-        assert all(isinstance(factor, IntFactor) for factor in factors)
+        assert all(factor[0] in ("*", "/") for factor in factors)
+        assert all(isinstance(factor[1], IntFactor) for factor in factors)
         self.__factors = factors
 
     def compute(self):
         v = 1
-        for f in self.__factors:
-            v *= f.compute()
+        for mult, f in self.__factors:
+            if mult == "*":
+                v *= f.compute()
+            else:
+                v /= f.compute()
         return v
 
     @staticmethod
     def parse(c):
-        # @todo '/'
-        r = SequenceParser(IntFactor, RepetitionParser(SequenceParser(LiteralParser("*"), IntFactor))).parse(c)
+        r = SequenceParser(IntFactor, RepetitionParser(SequenceParser(AlternativeParser(LiteralParser("*"), LiteralParser("/")), IntFactor))).parse(c)
         if r.ok:
-            factors = [r.value[0]]
-            factors += [v[1] for v in r.value[1]]
+            factors = [("*", r.value[0])]
+            factors += r.value[1]
             return ParsingSuccess(IntTerm(factors))
         else:
             return r
@@ -253,22 +256,25 @@ class IntFactor:
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
 class IntExpr:
     def __init__(self, terms):
-        assert all(isinstance(term, IntTerm) for term in terms)
+        assert all(term[0] in ("+", "-") for term in terms)
+        assert all(isinstance(term[1], IntTerm) for term in terms)
         self.__terms = terms
 
     def compute(self):
         v = 0
-        for term in self.__terms:
-            v += term.compute()
+        for add, term in self.__terms:
+            if add == "+":
+                v += term.compute()
+            else:
+                v -= term.compute()
         return v
 
     @staticmethod
     def parse(c):
-        # @todo '-'
-        r = SequenceParser(IntTerm, RepetitionParser(SequenceParser(LiteralParser("+"), IntTerm))).parse(c)
+        r = SequenceParser(IntTerm, RepetitionParser(SequenceParser(AlternativeParser(LiteralParser("+"), LiteralParser("-")), IntTerm))).parse(c)
         if r.ok:
-            terms = [r.value[0]]
-            terms += [v[1] for v in r.value[1]]
+            terms = [("+", r.value[0])]
+            terms += r.value[1]
             return ParsingSuccess(IntExpr(terms))
         else:
             return r
@@ -484,6 +490,12 @@ class TestCase(unittest.TestCase):
 
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
+
+    def testDivision(self):
+        self.parseAndDump('(8/4)*"abc"', "abcabc")
+
+    def testSubstraction(self):
+        self.parseAndDump('(8-6)*"abc"', "abcabc")
 
     def testStringExpr(self):
         self.parseAndDump('("abc")', "abc")
