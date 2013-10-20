@@ -3,10 +3,6 @@
 import unittest
 
 
-class SyntaxError(Exception):
-    pass
-
-
 class Cursor(object):
     def __init__(self, s):
         self.__s = s
@@ -39,6 +35,62 @@ class Cursor(object):
         self.__i = i
 
 
+class LiteralParser:
+    def __init__(self, value):
+        self.__value = value
+
+    def parse(self, c):
+        if c.startswith(self.__value):
+            c.advance(len(self.__value))
+            return ParsingSuccess(self.__value)
+        return ParsingFailure("Expected '" + self.__ + "'")
+
+
+class SequenceParser:
+    def __init__(self, *elements):
+        self.__elements = elements
+
+    def parse(self, c):
+        origPos = c.position
+        values = []
+        for element in self.__elements:
+            r = element.parse(c)
+            if r.ok:
+                values.append(r.value)
+            else:
+                c.reset(origPos)
+                return r
+        return ParsingSuccess(values)
+
+
+# class AlternativeParser:
+#     def __init__(self, *elements):
+#         self.__elements = elements
+
+#     def parse(self, c):
+#         origPos = c.position
+#         for element in self.__elements:
+#             r = element.parse(c)
+#             if r.ok:
+#                 return r
+#             else:
+#                 c.reset(origPos)
+#         return ParsingFailure("Expected something")
+
+
+class RepetitionParser:
+    def __init__(self, parser):
+        self.__parser = parser
+
+    def parse(self, c):
+        values = []
+        r = self.__parser.parse(c)
+        while r.ok:
+            values.append(r.value)
+            r = self.__parser.parse(c)
+        return ParsingSuccess(values)
+
+
 class ParsingFailure:
     def __init__(self, reason):
         self.ok = False
@@ -49,6 +101,10 @@ class ParsingSuccess:
     def __init__(self, value):
         self.ok = True
         self.value = value
+
+
+class SyntaxError(Exception):
+    pass
 
 
 def parse(s):
@@ -100,19 +156,12 @@ class StringTerm:
 
 
 def parseStringTerm(c):
-    rInt = IntTerm.parse(c)
-    if rInt.ok:
-        if c.startswith("*"):
-            c.advance(1)
-            rString = parseStringFactor(c)
-            if rString.ok:
-                return ParsingSuccess(StringTerm(rInt.value, rString.value))
-            else:
-                return rString
-        else:
-            return ParsingFailure("Expected '*' (then stringFactor)")
+    rInt = SequenceParser(IntTerm, LiteralParser("*")).parse(c)
+    rString = parseStringFactor(c)
+    if rInt.ok and rString.ok:
+        return ParsingSuccess(StringTerm(rInt.value[0], rString.value))
     else:
-        return parseStringFactor(c)
+        return rString
 
 
 # Grammar rule: stringFactor = ( string | '(', stringExpr, ')' );
@@ -133,34 +182,20 @@ class IntTerm:
 
     @staticmethod
     def parse(c):
-        factors = []
-        r = parseIntFactor(c)
-        while r.ok:
-            factors.append(r.value)
-            r = IntTerm.__parseTimesIntFactor(c)
-        if len(factors) == 0:
-            return ParsingFailure("Expected intTerm")
-        else:
+        r = SequenceParser(IntFactor, RepetitionParser(SequenceParser(LiteralParser("*"), IntFactor))).parse(c)
+        if r.ok:
+            factors = [r.value[0]]
+            factors += [v[1] for v in r.value[1]]
             return ParsingSuccess(IntTerm(factors))
-
-    @staticmethod
-    def __parseTimesIntFactor(c):
-        origPos = c.position
-        if c.startswith("*"):
-            c.advance(1)
-            r = parseIntFactor(c)
-            if r.ok:
-                return r
-            else:
-                c.reset(origPos)
-                return r
         else:
-            return ParsingFailure("Expected '*'")
+            return r
 
 
 # Grammar rule: intFactor = int | '(', intExpr, ')';
-def parseIntFactor(c):
-    return parseInt(c)
+class IntFactor:
+    @staticmethod
+    def parse(c):
+        return parseInt(c)
 
 
 # Grammar rule: intExpr = intTerm, { ( '+' | '-' ) , intTerm };
