@@ -147,7 +147,7 @@ class IntTerm:
             if mult == "*":
                 v *= f.compute()
             else:
-                v /= f.compute()
+                v //= f.compute()
         return v
 
     @staticmethod
