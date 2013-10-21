@@ -69,7 +69,7 @@ class SequenceParser:
                 if self.__expected is not None:
                     f.expected = self.__expected
                 return f
-        return ParsingSuccess([r.value for r in results], furthestFailure(results))
+        return ParsingSuccess(tuple(r.value for r in results), furthestFailure(results))
 
 
 class AlternativeParser:
@@ -130,10 +130,14 @@ def furthestFailure(results):
                 if failure is None or r.failure.position > failure.position:
                     failure = r.failure
                     trueFailure = False
+                elif r.failure.position == failure.position:
+                    failure.expected += r.failure.expected
         else:
             if failure is None or r.position > failure.position or (not trueFailure and r.position >= failure.position):
                 failure = r
                 trueFailure = True
+            elif r.position == failure.position:
+                failure.expected += r.expected
     return failure
 
 
@@ -165,7 +169,7 @@ class ErrorHandling(unittest.TestCase):
         ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, ["<abcy>"])
+        self.assertEqual(r.expected, ["<abcy>", "<abcw>"])
 
     def testLiteralParserTellsWhereItFailed(self):
         p = LiteralParser("abcy")
@@ -231,6 +235,94 @@ class ErrorHandling(unittest.TestCase):
         self.assertEqual(r.failure.position, 6)
         self.assertEqual(r.failure.expected, ["<acd>"])
 
+    def testAlternativeParserGivesAllExpectedValues(self):
+        p = AlternativeParser([
+            AlternativeParser([LiteralParser("xa"), LiteralParser("xb")]),
+            AlternativeParser([LiteralParser("xc"), LiteralParser("xd"), LiteralParser("z")])
+        ])
+        r = p.parse(Cursor("xe"))
+        self.assertEqual(r.position, 1)
+        self.assertEqual(r.expected, ["<xa>", "<xb>", "<xc>", "<xd>"])
+
+
+class MinimalArithmeticParserTestCase(unittest.TestCase):
+    def setUp(self):
+        integer = LiteralParser("1")
+
+        class factor:
+            @staticmethod
+            def parse(c):
+                return AlternativeParser([
+                    integer,
+                    SequenceParser([
+                        LiteralParser("("),
+                        expr,
+                        LiteralParser(")")
+                    ])
+                ]).parse(c)
+
+        term = SequenceParser([
+            factor,
+            RepetitionParser(SequenceParser([
+                LiteralParser("*"),
+                factor
+            ]))
+        ])
+
+        expr = SequenceParser([
+            term,
+            RepetitionParser(SequenceParser([
+                LiteralParser("+"),
+                term
+            ]))
+        ])
+
+        self.p = expr
+
+    def testSimpleSuccess(self):
+        r = self.p.parse(Cursor("1+1*1"))
+        self.assertTrue(r.ok)
+        self.assertEqual(
+            r.value,
+            (  # expr = Seq => tuple
+                (  # term = Seq => tuple
+                    '1',  # factor = Alt => type of integer => string
+                    []  # Rep => list
+                ),  # end of term
+                [  # Rep => list
+                    (  # Seq => tuple
+                        '+',  # Lit => string
+                        (  # term = Seq => tuple
+                            '1',  # factor = Alt => type of integer => string
+                            [  # Rep => list
+                                (  # Seq => tuple
+                                    '*',  # Lit => string
+                                    '1'  # factor = Alt => type of integer => string
+                                )
+                            ]
+                        )
+                    )
+                ]
+            )
+        )
+        self.assertEqual(r.failure.position, 5)
+        self.assertEqual(r.failure.expected, ["<+>", "<*>"])
+
+    def testDandlingAdd(self):
+        r = self.p.parse(Cursor("1+1+"))
+        self.assertEqual(r.failure.position, 4)
+        self.assertEqual(r.failure.expected, ["<1>", "<(>"])
+
+    def testDandlingMult(self):
+        r = self.p.parse(Cursor("1+1+"))
+        self.assertEqual(r.failure.position, 4)
+        self.assertEqual(r.failure.expected, ["<1>", "<(>"])
+
+    def testUnclosedParenth(self):
+        r = self.p.parse(Cursor("1+(1+1"))
+        self.assertEqual(r.failure.position, 6)
+        self.assertEqual(r.failure.expected, ["<)>"])
+
 
 def parse(s):
     c = Cursor(s)
@@ -238,7 +330,7 @@ def parse(s):
     if not r.ok:
         raise SyntaxError(r.position, "Expected " + " or ".join(r.expected))
     elif not c.finished:
-        raise SyntaxError(c.position, "Expected <+>")
+        raise SyntaxError(r.failure.position, "Expected " + " or ".join(r.failure.expected))
     else:
         return r.value
 
@@ -651,7 +743,7 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('"abcdefghijklmnopqrstuvwxyz"', "abcdefghijklmnopqrstuvwxyz")
 
     def testEmptyInput(self):
-        self.expectSyntaxError('', 0, "Expected opening quote")
+        self.expectSyntaxError('', 0, "Expected opening quote or <(>")
 
     def testForbidenChar(self):
         self.expectSyntaxError('"A"', 1, "Expected closing quote")  # @todo Improve error message
@@ -683,13 +775,13 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
 
     def testBadAddition_1(self):
-        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected 0-9")
+        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected 0-9 or <(>")
 
     def testBadAddition_2(self):
-        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected opening quote")
+        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected opening quote or <(>")
 
     def testBadStringFactor(self):
-        self.expectSyntaxError('(1+1)*a', 6, "Expected opening quote")
+        self.expectSyntaxError('(1+1)*a', 6, "Expected opening quote or <(>")
 
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
@@ -704,11 +796,11 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('("abc")', "abc")
         self.parseAndDump('(1+1)*("abc"+"def")', "abcdefabcdef")
 
-    # def testBadOperation_1(self):
-    #     self.expectSyntaxError('(1%1)*"a"', 2, "Expected <+>, <->, <*> or </>")
+    def testBadOperation_1(self):
+        self.expectSyntaxError('(1%1)*"a"', 2, "Expected <*>")
 
-    # def testBadOperation_2(self):
-    #     self.expectSyntaxError('(1+1%1)*"a"', 4, "Expected <+>, <->, <*> or </>")
+    def testBadOperation_2(self):
+        self.expectSyntaxError('(1+1%1)*"a"', 4, "Expected <)>")
 
 
 if __name__ == "__main__":  # pragma no branch
