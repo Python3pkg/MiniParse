@@ -46,7 +46,7 @@ class LiteralParser:
             if c.startswith(v):
                 c.advance(1)
             else:
-                r = ParsingFailure(c.position, set([self.__expected or "<" + self.__value + ">"]))
+                r = ParsingFailure(c.position, set([self.__expected or "'" + self.__value + "'"]))
                 c.reset(origPos)
                 return r
         return ParsingSuccess(self.__value, None)
@@ -144,18 +144,12 @@ class ParsingFailure:
         self.position = position
         self.expected = expected
 
-    def __repr__(self):
-        return "ParsingFailure(" + str(self.position) + ", " + str(self.expected) + ")"
-
 
 class ParsingSuccess:
     def __init__(self, value, failure):
         self.ok = True
         self.value = value
         self.failure = failure
-
-    def __repr__(self):
-        return "ParsingSuccess(" + str(self.value) + ", " + str(self.failure) + ")"
 
 
 class SyntaxError(Exception):
@@ -172,20 +166,20 @@ class ErrorHandling(unittest.TestCase):
         ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["<abcy>", "<abcw>"]))
+        self.assertEqual(r.expected, set(["'abcy'", "'abcw'"]))
 
     def testLiteralParserTellsWhereItFailed(self):
         p = LiteralParser("abcy")
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["<abcy>"]))
+        self.assertEqual(r.expected, set(["'abcy'"]))
 
     def testOptionalParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = OptionalParser(LiteralParser("abcy"))
         r = p.parse(Cursor("abcd"))
         self.assertTrue(r.ok)
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["<abcy>"]))
+        self.assertEqual(r.failure.expected, set(["'abcy'"]))
 
     def testSequenceStartingWithOptional(self):
         p = SequenceParser([
@@ -194,7 +188,7 @@ class ErrorHandling(unittest.TestCase):
         ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["<abcy>"]))
+        self.assertEqual(r.expected, set(["'abcy'"]))
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = SequenceParser([
@@ -203,16 +197,16 @@ class ErrorHandling(unittest.TestCase):
         ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["<abcy>"]))
+        self.assertEqual(r.failure.expected, set(["'abcy'"]))
 
-    def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_OptionalIsLowerPriorityInCaseOfTie(self):
+    def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_Tie(self):
         p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("abcz")
         ])
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["<abcz>", "<abcy>"]))
+        self.assertEqual(r.expected, set(["'abcz'", "'abcy'"]))
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
         p = RepetitionParser(
@@ -223,7 +217,7 @@ class ErrorHandling(unittest.TestCase):
         )
         r = p.parse(Cursor("abcd"))
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["<abcy>"]))
+        self.assertEqual(r.failure.expected, set(["'abcy'"]))
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
         p = RepetitionParser(
@@ -236,7 +230,7 @@ class ErrorHandling(unittest.TestCase):
         self.assertTrue(r.ok)
         self.assertEqual(r.value, ["ab", "ab"])
         self.assertEqual(r.failure.position, 6)
-        self.assertEqual(r.failure.expected, set(["<acd>"]))
+        self.assertEqual(r.failure.expected, set(["'acd'"]))
 
     def testAlternativeParserGivesAllExpectedValues(self):
         p = AlternativeParser([
@@ -245,7 +239,7 @@ class ErrorHandling(unittest.TestCase):
         ])
         r = p.parse(Cursor("xe"))
         self.assertEqual(r.position, 1)
-        self.assertEqual(r.expected, set(["<xa>", "<xb>", "<xc>", "<xd>"]))
+        self.assertEqual(r.expected, set(["'xa'", "'xb'", "'xc'", "'xd'"]))
 
 
 class MinimalArithmeticParserTestCase(unittest.TestCase):
@@ -314,34 +308,34 @@ class MinimalArithmeticParserTestCase(unittest.TestCase):
         r = self.p.parse(Cursor("1"))
         self.assertTrue(r.ok)
         self.assertEqual(r.failure.position, 1)
-        self.assertEqual(r.failure.expected, set(["<*>", "<+>"]))
+        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
 
     def testMediumSuccess_1(self):
         r = self.p.parse(Cursor("1+1"))
         self.assertTrue(r.ok)
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["<*>", "<+>"]))
+        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
 
     def testMediumSuccess_2(self):
         r = self.p.parse(Cursor("1*1"))
         self.assertTrue(r.ok)
         self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["<*>", "<+>"]))
+        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
 
     def testDandlingAdd(self):
         r = self.p.parse(Cursor("1+1+"))
         self.assertEqual(r.failure.position, 4)
-        self.assertEqual(r.failure.expected, set(["<1>", "<(>"]))
+        self.assertEqual(r.failure.expected, set(["'1'", "'('"]))
 
     def testDandlingMult(self):
         r = self.p.parse(Cursor("1+1+"))
         self.assertEqual(r.failure.position, 4)
-        self.assertEqual(r.failure.expected, set(["<1>", "<(>"]))
+        self.assertEqual(r.failure.expected, set(["'1'", "'('"]))
 
     def testUnclosedParenth(self):
         r = self.p.parse(Cursor("1+(1+1"))
         self.assertEqual(r.failure.position, 6)
-        self.assertEqual(r.failure.expected, set(["<)>", "<*>", "<+>"]))
+        self.assertEqual(r.failure.expected, set(["')'", "'*'", "'+'"]))
 
 
 def parse(s):
@@ -763,7 +757,7 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('"abcdefghijklmnopqrstuvwxyz"', "abcdefghijklmnopqrstuvwxyz")
 
     def testEmptyInput(self):
-        self.expectSyntaxError('', 0, "Expected 0-9 or <(> or <-> or opening quote")
+        self.expectSyntaxError('', 0, "Expected '(' or '-' or 0-9 or opening quote")
 
     def testForbidenChar(self):
         self.expectSyntaxError('"A"', 1, "Expected a-z or closing quote or escape sequence")
@@ -775,7 +769,7 @@ class TestCase(unittest.TestCase):
         self.expectSyntaxError('"abc', 4, "Expected a-z or closing quote or escape sequence")
 
     def testTrailingJunk(self):
-        self.expectSyntaxError('"abc"xxx', 5, "Expected <+>")
+        self.expectSyntaxError('"abc"xxx', 5, "Expected '+'")
 
     def testBadEscapeSequence(self):
         self.expectSyntaxError('"ab\\c"', 4, "Expected escape sequence")
@@ -795,13 +789,13 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
 
     def testBadAddition_1(self):
-        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected 0-9 or <(> or <->")
+        self.expectSyntaxError('(1+a)*"abc"', 3, "Expected '(' or '-' or 0-9")
 
     def testBadAddition_2(self):
-        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected 0-9 or <(> or <-> or opening quote")
+        self.expectSyntaxError('(a+1)*"abc"', 1, "Expected '(' or '-' or 0-9 or opening quote")
 
     def testBadStringFactor(self):
-        self.expectSyntaxError('(1+1)*a', 6, "Expected 0-9 or <(> or <-> or opening quote")
+        self.expectSyntaxError('(1+1)*a', 6, "Expected '(' or '-' or 0-9 or opening quote")
 
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
@@ -817,7 +811,7 @@ class TestCase(unittest.TestCase):
         self.parseAndDump('(1+1)*("abc"+"def")', "abcdefabcdef")
 
     def testBadOperation(self):
-        self.expectSyntaxError('(1%1)*"a"', 2, "Expected 0-9 or <)> or <*> or <+> or <-> or </>")
+        self.expectSyntaxError('(1%1)*"a"', 2, "Expected ')' or '*' or '+' or '-' or '/' or 0-9")
 
 
 if __name__ == "__main__":  # pragma no branch
