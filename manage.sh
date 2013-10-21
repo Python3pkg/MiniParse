@@ -18,7 +18,7 @@ function publish {
     check
     test
     bump
-    doc
+    # doc
     push
 }
 
