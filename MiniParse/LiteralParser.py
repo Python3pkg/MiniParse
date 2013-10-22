@@ -20,7 +20,8 @@ class LiteralParser:
 
     def apply(self, cursor):
         with cursor.backtracking as bt:
-            if bt.next == self.__value:
-                return bt.success(self.__value)
-            else:
+            if cursor.finished or bt.current != self.__value:
                 return bt.expected(self.__value)
+            else:
+                bt.advance()
+                return bt.success(self.__value)

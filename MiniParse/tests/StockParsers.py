@@ -38,8 +38,11 @@ class Literal(ParserTestCase):
     def testSuccess(self):
         self.expectSuccess([42], 42)
 
-    def testFailure(self):
+    def testFailure1(self):
         self.expectFailure([41], 0, [42])
+
+    def testFailure10(self):
+        self.expectFailure([], 0, [42])
 
     def testPartialSuccess(self):
         self.expectFailure([42, 43], 1, [])
@@ -57,14 +60,26 @@ class Sequence(ParserTestCase):
     def testSuccess(self):
         self.expectSuccess([42, 43, 44, 45], (42, 43, 44, 45))
 
+    def testFailure0(self):
+        self.expectFailure([], 0, [42])
+
     def testFailure1(self):
         self.expectFailure([41], 0, [42])
+
+    def testFailure10(self):
+        self.expectFailure([42], 1, [43])
 
     def testFailure2(self):
         self.expectFailure([42, 41], 1, [43])
 
+    def testFailure20(self):
+        self.expectFailure([42, 43], 2, [44])
+
     def testFailure3(self):
         self.expectFailure([42, 43, 41], 2, [44])
+
+    def testFailure30(self):
+        self.expectFailure([42, 43, 44], 3, [45])
 
     def testFailure4(self):
         self.expectFailure([42, 43, 44, 41], 3, [45])
@@ -93,14 +108,26 @@ class UnambiguousAlternative(ParserTestCase):
     def testFailure0(self):
         self.expectFailure([41], 0, [42, 44, 46])
 
+    def testFailure00(self):
+        self.expectFailure([], 0, [42, 44, 46])
+
     def testFailure1(self):
         self.expectFailure([42, 41], 1, [43])
+
+    def testFailure10(self):
+        self.expectFailure([42], 1, [43])
 
     def testFailure2(self):
         self.expectFailure([44, 41], 1, [45])
 
+    def testFailure20(self):
+        self.expectFailure([44], 1, [45])
+
     def testFailure3(self):
         self.expectFailure([46, 41], 1, [47])
+
+    def testFailure30(self):
+        self.expectFailure([46], 1, [47])
 
     def testPartialSuccess1(self):
         self.expectFailure([42, 43, 41], 2, [])

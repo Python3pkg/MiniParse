@@ -31,8 +31,11 @@ class Cursor(object):
                     self.__cursor._position = self.__originalPosition
 
         @property
-        def next(self):
-            return self.__cursor._next()
+        def current(self):
+            return self.__cursor._current()
+
+        def advance(self):
+            return self.__cursor._advance()
 
         def success(self, value):
             self.__end(False)
@@ -61,22 +64,23 @@ class Cursor(object):
     def backtracking(self):
         return Cursor.Backtracking(self)
 
-    def _next(self):
+    def _current(self):
         assert not self.finished
-        next = self.__tokens[self._position]
+        return self.__tokens[self._position]
+
+    def _advance(self):
+        assert not self.finished
         self._position += 1
-        return next
 
     def _success(self, value):
-        if self._position >= self.__maxPosition:
+        if self._position > self.__maxPosition:
             self.__maxPosition = self._position
             self.__expected = set()
         self.value = value
         return True
 
     def _expected(self, expected):
-        assert self._position <= self.__maxPosition + 1
-        if self._position == self.__maxPosition + 1:
+        if self._position == self.__maxPosition:
             self.__expected.add(expected)
         return False
 
