@@ -17,7 +17,7 @@ import unittest
 import MockMockMock
 
 from MiniParse import parse, SyntaxError
-from MiniParse import LiteralParser
+from MiniParse import LiteralParser, SequenceParser
 
 
 class LiteralParserTestCase(unittest.TestCase):
@@ -37,4 +37,50 @@ class LiteralParserTestCase(unittest.TestCase):
         with self.assertRaises(SyntaxError) as cm:
             parse(self.p, [42, 43])
         self.assertEqual(cm.exception.position, 1)
+        self.assertEqual(cm.exception.expected, set())
+
+
+class SequenceParserTestCase(unittest.TestCase):
+    def setUp(self):
+        self.p = SequenceParser([
+            LiteralParser(42),
+            LiteralParser(43),
+            LiteralParser(44),
+            LiteralParser(45)
+        ])
+
+    def testSuccess(self):
+        self.assertEqual(
+            parse(self.p, [42, 43, 44, 45]),
+            (42, 43, 44, 45)
+        )
+
+    def testFailure1(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [41])
+        self.assertEqual(cm.exception.position, 0)
+        self.assertEqual(cm.exception.expected, set([42]))
+
+    def testFailure2(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [42, 41])
+        self.assertEqual(cm.exception.position, 1)
+        self.assertEqual(cm.exception.expected, set([43]))
+
+    def testFailure3(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [42, 43, 41])
+        self.assertEqual(cm.exception.position, 2)
+        self.assertEqual(cm.exception.expected, set([44]))
+
+    def testFailure4(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [42, 43, 44, 41])
+        self.assertEqual(cm.exception.position, 3)
+        self.assertEqual(cm.exception.expected, set([45]))
+
+    def testPartialSuccess(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [42, 43, 44, 45, 46])
+        self.assertEqual(cm.exception.position, 4)
         self.assertEqual(cm.exception.expected, set())

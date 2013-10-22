@@ -13,6 +13,7 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LiteralParser import LiteralParser
 from ParseFunction import parse
 from SyntaxError import SyntaxError
+from LiteralParser import LiteralParser
+from SequenceParser import SequenceParser

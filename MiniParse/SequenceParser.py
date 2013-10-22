@@ -14,13 +14,16 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class LiteralParser:
-    def __init__(self, value):
-        self.__value = value
+class SequenceParser:
+    def __init__(self, elements):
+        self.__elements = elements
 
     def apply(self, cursor):
         with cursor.backtracking as bt:
-            if bt.next == self.__value:
-                return bt.success(self.__value)
-            else:
-                return bt.expected(self.__value)
+            values = []
+            for element in self.__elements:
+                if element.apply(cursor):
+                    values.append(cursor.value)
+                else:
+                    return bt.failure()
+            return bt.success(tuple(values))

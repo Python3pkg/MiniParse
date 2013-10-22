@@ -18,22 +18,33 @@ class Cursor(object):
     class Backtracking(object):
         def __init__(self, cursor):
             self.__cursor = cursor
+            self.__ended = False
 
         def __enter__(self, *args):
             return self
 
         def __exit__(self, *args):
-            pass
+            assert self.__ended
 
         @property
         def next(self):
             return self.__cursor._next()
 
         def success(self, value):
+            self.__end()
             return self.__cursor._success(value)
 
-        def failure(self, expected):
-            return self.__cursor._failure(expected)
+        def expected(self, expected):
+            self.__end()
+            return self.__cursor._expected(expected)
+
+        def failure(self):
+            self.__end()
+            return self.__cursor._failure()
+
+        def __end(self):
+            assert not self.__ended
+            self.__ended = True
 
     def __init__(self, tokens):  # @todo Write tests demonstrating that tokens can be a simple iterator
         self.__tokens = tokens
@@ -57,9 +68,12 @@ class Cursor(object):
         self.value = value
         return True
 
-    def _failure(self, expected):
+    def _expected(self, expected):
         if self.__position > self.__maxPosition:
             self.__expected.add(expected)
+        return False
+
+    def _failure(self):
         return False
 
     @property
