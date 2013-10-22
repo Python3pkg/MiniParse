@@ -13,8 +13,14 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from ParseFunction import parse
-from SyntaxError import SyntaxError
-from LiteralParser import LiteralParser
-from SequenceParser import SequenceParser
-from AlternativeParser import AlternativeParser
+
+class AlternativeParser:
+    def __init__(self, elements):
+        self.__elements = elements
+
+    def apply(self, cursor):
+        with cursor.backtracking as bt:  # @todo Remove backtracking, the parser doesn't need it because it consumes nothing by itself
+            for element in self.__elements:
+                if element.apply(cursor):
+                    return bt.success(cursor.value)
+            return bt.failure()

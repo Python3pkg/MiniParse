@@ -17,7 +17,7 @@ import unittest
 import MockMockMock
 
 from MiniParse import parse, SyntaxError
-from MiniParse import LiteralParser, SequenceParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser
 
 
 class ParserTestCase(unittest.TestCase):
@@ -71,3 +71,42 @@ class Sequence(ParserTestCase):
 
     def testPartialSuccess(self):
         self.expectFailure([42, 43, 44, 45, 46], 4, [])
+
+
+class UnambiguousAlternative(ParserTestCase):
+    def setUp(self):
+        self.p = AlternativeParser([
+            SequenceParser([LiteralParser(42), LiteralParser(43)]),
+            SequenceParser([LiteralParser(44), LiteralParser(45)]),
+            SequenceParser([LiteralParser(46), LiteralParser(47)])
+        ])
+
+    def testSuccess1(self):
+        self.expectSuccess([42, 43], (42, 43))
+
+    def testSuccess2(self):
+        self.expectSuccess([44, 45], (44, 45))
+
+    def testSuccess3(self):
+        self.expectSuccess([46, 47], (46, 47))
+
+    def testFailure0(self):
+        self.expectFailure([41], 0, [42, 44, 46])
+
+    def testFailure1(self):
+        self.expectFailure([42, 41], 1, [43])
+
+    def testFailure2(self):
+        self.expectFailure([44, 41], 1, [45])
+
+    def testFailure3(self):
+        self.expectFailure([46, 41], 1, [47])
+
+    def testPartialSuccess1(self):
+        self.expectFailure([42, 43, 41], 2, [])
+
+    def testPartialSuccess2(self):
+        self.expectFailure([44, 45, 41], 2, [])
+
+    def testPartialSuccess3(self):
+        self.expectFailure([46, 47, 41], 2, [])
