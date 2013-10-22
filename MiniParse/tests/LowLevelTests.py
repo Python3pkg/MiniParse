@@ -15,7 +15,8 @@
 
 import unittest
 
-from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser, Cursor
+from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser
+from MiniParse import Cursor
 
 
 class ParserTestCase(unittest.TestCase):
