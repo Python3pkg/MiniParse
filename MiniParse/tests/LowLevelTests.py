@@ -18,7 +18,7 @@ import unittest
 from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser, Cursor
 
 
-class ErrorHandling(unittest.TestCase):
+class ParserTestCase(unittest.TestCase):
     def expectParsingFailure(self, input, position, expected):
         r = self.p.parse(Cursor(input))
         self.assertFalse(r.ok)
@@ -32,6 +32,8 @@ class ErrorHandling(unittest.TestCase):
         self.assertEqual(r.failure.position, position)
         self.assertEqual(r.failure.expected, set(expected))
 
+
+class ErrorHandling(ParserTestCase):
     def testErrorComesFromFirstLongestAlternative(self):
         self.p = AlternativeParser([
             LiteralParser("abx"),
@@ -96,7 +98,7 @@ class ErrorHandling(unittest.TestCase):
         self.expectParsingFailure("xe", 1, ["'xa'", "'xb'", "'xc'", "'xd'"])
 
 
-class MinimalArithmeticParserTestCase(unittest.TestCase):
+class MinimalArithmeticParserTestCase(ParserTestCase):
     def setUp(self):
         integer = LiteralParser("1")
 
@@ -130,11 +132,9 @@ class MinimalArithmeticParserTestCase(unittest.TestCase):
 
         self.p = expr
 
-    def testSuccess(self):
-        r = self.p.parse(Cursor("1+1*1"))
-        self.assertTrue(r.ok)
-        self.assertEqual(
-            r.value,
+    def testComplexSuccess(self):
+        self.expectParsingSuccess(
+            "1+1*1",
             (  # expr = Seq => tuple
                 (  # term = Seq => tuple
                     '1',  # factor = Alt => type of integer => string
@@ -154,39 +154,25 @@ class MinimalArithmeticParserTestCase(unittest.TestCase):
                         )
                     )
                 ]
-            )
+            ),
+            5,
+            ["'*'", "'+'"]
         )
-        self.assertEqual(r.failure.position, 5)
 
     def testSimpleSuccess(self):
-        r = self.p.parse(Cursor("1"))
-        self.assertTrue(r.ok)
-        self.assertEqual(r.failure.position, 1)
-        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
+        self.expectParsingSuccess("1", (('1', []), []), 1, ["'*'", "'+'"])
 
     def testMediumSuccess_1(self):
-        r = self.p.parse(Cursor("1+1"))
-        self.assertTrue(r.ok)
-        self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
+        self.expectParsingSuccess("1+1", (('1', []), [('+', ('1', []))]), 3, ["'*'", "'+'"])
 
     def testMediumSuccess_2(self):
-        r = self.p.parse(Cursor("1*1"))
-        self.assertTrue(r.ok)
-        self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["'*'", "'+'"]))
+        self.expectParsingSuccess("1*1", (('1', [('*', '1')]), []), 3, ["'*'", "'+'"])
 
     def testDandlingAdd(self):
-        r = self.p.parse(Cursor("1+1+"))
-        self.assertEqual(r.failure.position, 4)
-        self.assertEqual(r.failure.expected, set(["'1'", "'('"]))
+        self.expectParsingSuccess("1+1+", (('1', []), [('+', ('1', []))]), 4, ["'1'", "'('"])
 
     def testDandlingMult(self):
-        r = self.p.parse(Cursor("1+1+"))
-        self.assertEqual(r.failure.position, 4)
-        self.assertEqual(r.failure.expected, set(["'1'", "'('"]))
+        self.expectParsingSuccess("1*1*", (('1', [('*', '1')]), []), 4, ["'1'", "'('"])
 
     def testUnclosedParenth(self):
-        r = self.p.parse(Cursor("1+(1+1"))
-        self.assertEqual(r.failure.position, 6)
-        self.assertEqual(r.failure.expected, set(["')'", "'*'", "'+'"]))
+        self.expectParsingSuccess("1+(1+1", (('1', []), []), 6, ["')'", "'*'", "'+'"])
