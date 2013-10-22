@@ -13,5 +13,19 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from StockParsers import *
-from BadBehavior import *
+import unittest
+import MockMockMock
+
+from MiniParse import parse, SyntaxError
+from MiniParse import SequenceParser
+
+
+class TestCase(unittest.TestCase):
+	def testExceptionsRaisedByParsersAreNotModified(self):
+		mocks = MockMockMock.Engine()
+		parser = mocks.create("parser")
+		e = Exception()
+		parser.expect.apply.withArguments(lambda args, kwds: True).andRaise(e)
+		with self.assertRaises(Exception) as cm:
+			parse(SequenceParser([parser.object]), "")
+		self.assertIs(cm.exception, e)
