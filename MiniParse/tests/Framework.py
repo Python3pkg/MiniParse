@@ -13,6 +13,17 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from StockParsers import *
-from BadBehavior import *
-from MinimalArithmeticTestCase import *
+import unittest
+
+from MiniParse import parse, SyntaxError
+
+
+class ParserTestCase(unittest.TestCase):
+    def expectSuccess(self, input, value):
+        self.assertEqual(parse(self.p, input), value)
+
+    def expectFailure(self, input, position, expected):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, input)
+        self.assertEqual(cm.exception.position, position)
+        self.assertEqual(cm.exception.expected, set(expected))
