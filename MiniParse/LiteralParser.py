@@ -13,6 +13,14 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LiteralParser import LiteralParser
-from ParseFunction import parse
-from SyntaxError import SyntaxError
+
+class LiteralParser:
+    def __init__(self, value):
+        self.__value = value
+
+    def apply(self, cursor):
+        with cursor.backtracking as bt:
+            if bt.next == self.__value:
+                return bt.success(self.__value)
+            else:
+                return bt.failure(self.__value)

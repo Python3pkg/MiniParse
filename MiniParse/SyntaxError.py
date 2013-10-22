@@ -13,6 +13,9 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LiteralParser import LiteralParser
-from ParseFunction import parse
-from SyntaxError import SyntaxError
+
+class SyntaxError(Exception):
+    def __init__(self, position, expected):
+        Exception.__init__(self, position, expected)
+        self.position = position
+        self.expected = expected

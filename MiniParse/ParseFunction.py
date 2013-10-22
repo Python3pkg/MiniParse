@@ -13,6 +13,16 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LiteralParser import LiteralParser
-from ParseFunction import parse
+from Cursor import Cursor
 from SyntaxError import SyntaxError
+
+
+def parse(parser, tokens):
+    c = Cursor(tokens)
+    if parser.apply(c):
+        if c.finished:
+            return c.value
+        else:
+            raise SyntaxError(*c.error)
+    else:
+        raise SyntaxError(*c.error)

@@ -13,6 +13,28 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LiteralParser import LiteralParser
-from ParseFunction import parse
-from SyntaxError import SyntaxError
+import unittest
+import MockMockMock
+
+from MiniParse import parse, SyntaxError
+from MiniParse import LiteralParser
+
+
+class LiteralParserTestCase(unittest.TestCase):
+    def setUp(self):
+        self.p = LiteralParser(42)
+
+    def testSuccess(self):
+        self.assertEqual(parse(self.p, [42]), 42)
+
+    def testFailure(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [41])
+        self.assertEqual(cm.exception.position, 0)
+        self.assertEqual(cm.exception.expected, set([42]))
+
+    def testPartialSuccess(self):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, [42, 43])
+        self.assertEqual(cm.exception.position, 1)
+        self.assertEqual(cm.exception.expected, set())
