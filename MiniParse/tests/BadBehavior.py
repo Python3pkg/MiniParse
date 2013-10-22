@@ -21,11 +21,11 @@ from MiniParse import SequenceParser
 
 
 class TestCase(unittest.TestCase):
-	def testExceptionsRaisedByParsersAreNotModified(self):
-		mocks = MockMockMock.Engine()
-		parser = mocks.create("parser")
-		e = Exception()
-		parser.expect.apply.withArguments(lambda args, kwds: True).andRaise(e)
-		with self.assertRaises(Exception) as cm:
-			parse(SequenceParser([parser.object]), "")
-		self.assertIs(cm.exception, e)
+    def testExceptionsRaisedByParsersAreNotModified(self):
+        mocks = MockMockMock.Engine()
+        parser = mocks.create("parser")
+        e = Exception()
+        parser.expect.apply.withArguments(lambda args, kwds: True).andRaise(e)
+        with self.assertRaises(Exception) as cm:
+            parse(SequenceParser([parser.object]), "")
+        self.assertIs(cm.exception, e)

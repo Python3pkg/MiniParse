@@ -23,4 +23,4 @@ class OptionalParser:
             if self.__parser.apply(cursor):
                 return bt.success(cursor.value)
             else:
-            	return bt.success(None)
+                return bt.success(None)
