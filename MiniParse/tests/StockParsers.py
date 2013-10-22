@@ -137,3 +137,39 @@ class UnambiguousAlternative(ParserTestCase):
 
     def testPartialSuccess3(self):
         self.expectFailure([46, 47, 41], 2, [])
+
+
+class AlternativeWithCommonPrefixAndDifferentLengths(ParserTestCase):
+    def setUp(self):
+        self.p = AlternativeParser([
+            SequenceParser([LiteralParser(42), LiteralParser(43)]),
+            SequenceParser([LiteralParser(42), LiteralParser(44), LiteralParser(45)]),
+            LiteralParser(42)
+        ])
+
+    def testSuccess1(self):
+        self.expectSuccess([42, 43], (42, 43))
+
+    def testSuccess2(self):
+        self.expectSuccess([42, 44, 45], (42, 44, 45))
+
+    def testSuccess3(self):
+        self.expectSuccess([42], 42)
+
+    def testFailure1(self):
+        self.expectFailure([], 0, [42])
+
+    def testFailure2(self):
+        self.expectFailure([41], 0, [42])
+
+    def testFailure3(self):
+        self.expectFailure([42, 41], 1, [43, 44])
+
+    def testFailure4(self):
+        self.expectFailure([42, 43, 41], 2, [])
+
+    def testFailure5(self):
+        self.expectFailure([42, 44, 45, 41], 3, [])
+
+    def testFailure6(self):
+        self.expectFailure([42, 44, 41], 2, [45])
