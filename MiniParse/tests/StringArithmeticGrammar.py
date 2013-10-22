@@ -15,9 +15,13 @@
 
 import unittest
 
-from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser, ParsingSuccess, Cursor, SyntaxError
+# Rewrite: should not change
+from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser, SyntaxError
+# Rewrite: will change
+from MiniParse import ParsingSuccess, Cursor
 
 
+# Rewrite: implementation will change
 def parse(s):
     c = Cursor(s)
     r = StringExpr.parse(c)
@@ -419,6 +423,7 @@ class Escape:
             return r
 
 
+# Rewrite: tests shouldn't change
 class TestCase(unittest.TestCase):
     def parseAndDump(self, input, expectedOutput):
         actualOutput = parse(input).dump()
