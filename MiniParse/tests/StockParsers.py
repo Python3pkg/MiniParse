@@ -16,7 +16,7 @@
 import unittest
 
 from MiniParse import parse, SyntaxError
-from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepetitionParser
 
 
 class ParserTestCase(unittest.TestCase):
@@ -189,3 +189,17 @@ class Optional(ParserTestCase):
 
     def testFailure2(self):
         self.expectFailure([42, 41], 1, [])
+
+
+class Repetition(ParserTestCase):
+    def setUp(self):
+        self.p = RepetitionParser(LiteralParser(42))
+
+    def testSuccess0(self):
+        self.expectSuccess([], [])
+
+    def testSuccess1(self):
+        self.expectSuccess([42, 42, 42], [42, 42, 42])
+
+    def testFailure1(self):
+        self.expectFailure([42, 42, 41], 2, [42])
