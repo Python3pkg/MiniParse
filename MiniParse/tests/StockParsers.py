@@ -20,27 +20,32 @@ from MiniParse import parse, SyntaxError
 from MiniParse import LiteralParser, SequenceParser
 
 
-class LiteralParserTestCase(unittest.TestCase):
+class ParserTestCase(unittest.TestCase):
+    def expectSuccess(self, input, value):
+        self.assertEqual(parse(self.p, input), value)
+
+    def expectFailure(self, input, position, expected):
+        with self.assertRaises(SyntaxError) as cm:
+            parse(self.p, input)
+        self.assertEqual(cm.exception.position, position)
+        self.assertEqual(cm.exception.expected, set(expected))
+
+
+class Literal(ParserTestCase):
     def setUp(self):
         self.p = LiteralParser(42)
 
     def testSuccess(self):
-        self.assertEqual(parse(self.p, [42]), 42)
+        self.expectSuccess([42], 42)
 
     def testFailure(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [41])
-        self.assertEqual(cm.exception.position, 0)
-        self.assertEqual(cm.exception.expected, set([42]))
+        self.expectFailure([41], 0, [42])
 
     def testPartialSuccess(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [42, 43])
-        self.assertEqual(cm.exception.position, 1)
-        self.assertEqual(cm.exception.expected, set())
+        self.expectFailure([42, 43], 1, [])
 
 
-class SequenceParserTestCase(unittest.TestCase):
+class Sequence(ParserTestCase):
     def setUp(self):
         self.p = SequenceParser([
             LiteralParser(42),
@@ -50,37 +55,19 @@ class SequenceParserTestCase(unittest.TestCase):
         ])
 
     def testSuccess(self):
-        self.assertEqual(
-            parse(self.p, [42, 43, 44, 45]),
-            (42, 43, 44, 45)
-        )
+        self.expectSuccess([42, 43, 44, 45], (42, 43, 44, 45))
 
     def testFailure1(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [41])
-        self.assertEqual(cm.exception.position, 0)
-        self.assertEqual(cm.exception.expected, set([42]))
+        self.expectFailure([41], 0, [42])
 
     def testFailure2(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [42, 41])
-        self.assertEqual(cm.exception.position, 1)
-        self.assertEqual(cm.exception.expected, set([43]))
+        self.expectFailure([42, 41], 1, [43])
 
     def testFailure3(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [42, 43, 41])
-        self.assertEqual(cm.exception.position, 2)
-        self.assertEqual(cm.exception.expected, set([44]))
+        self.expectFailure([42, 43, 41], 2, [44])
 
     def testFailure4(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [42, 43, 44, 41])
-        self.assertEqual(cm.exception.position, 3)
-        self.assertEqual(cm.exception.expected, set([45]))
+        self.expectFailure([42, 43, 44, 41], 3, [45])
 
     def testPartialSuccess(self):
-        with self.assertRaises(SyntaxError) as cm:
-            parse(self.p, [42, 43, 44, 45, 46])
-        self.assertEqual(cm.exception.position, 4)
-        self.assertEqual(cm.exception.expected, set())
+        self.expectFailure([42, 43, 44, 45, 46], 4, [])
