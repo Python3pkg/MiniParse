@@ -15,10 +15,13 @@
 
 import unittest
 
+# Rewrite: should not change
 from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser
+# Rewrite: will change
 from MiniParse import Cursor
 
 
+# Rewrite: will change
 class ParserTestCase(unittest.TestCase):
     def expectParsingFailure(self, input, position, expected):
         r = self.p.parse(Cursor(input))
@@ -34,6 +37,7 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(r.failure.expected, set(expected))
 
 
+# Rewrite: should not change
 class ErrorHandling(ParserTestCase):
     def testErrorComesFromFirstLongestAlternative(self):
         self.p = AlternativeParser([
