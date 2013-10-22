@@ -19,89 +19,81 @@ from MiniParse import OptionalParser, SequenceParser, AlternativeParser, Literal
 
 
 class ErrorHandling(unittest.TestCase):
+    def expectParsingFailure(self, input, position, expected):
+        r = self.p.parse(Cursor(input))
+        self.assertFalse(r.ok)
+        self.assertEqual(r.position, position)
+        self.assertEqual(r.expected, set(expected))
+
+    def expectParsingSuccess(self, input, value, position, expected):
+        r = self.p.parse(Cursor(input))
+        self.assertTrue(r.ok)
+        self.assertEqual(r.value, value)
+        self.assertEqual(r.failure.position, position)
+        self.assertEqual(r.failure.expected, set(expected))
+
     def testErrorComesFromFirstLongestAlternative(self):
-        p = AlternativeParser([
+        self.p = AlternativeParser([
             LiteralParser("abx"),
             LiteralParser("abcy"),
             LiteralParser("abcw"),
             LiteralParser("az")
         ])
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["'abcy'", "'abcw'"]))
+        self.expectParsingFailure("abcd", 3, ["'abcy'", "'abcw'"])
 
     def testLiteralParserTellsWhereItFailed(self):
-        p = LiteralParser("abcy")
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["'abcy'"]))
+        self.p = LiteralParser("abcy")
+        self.expectParsingFailure("abcd", 3, ["'abcy'"])
 
     def testOptionalParserTellsIfSomethingCouldHaveBeenBetter(self):
-        p = OptionalParser(LiteralParser("abcy"))
-        r = p.parse(Cursor("abcd"))
-        self.assertTrue(r.ok)
-        self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["'abcy'"]))
+        self.p = OptionalParser(LiteralParser("abcy"))
+        self.expectParsingSuccess("abcd", None, 3, ["'abcy'"])
 
     def testSequenceStartingWithOptional(self):
-        p = SequenceParser([
+        self.p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("az")
         ])
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["'abcy'"]))
+        self.expectParsingFailure("abcd", 3, ["'abcy'"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter(self):
-        p = SequenceParser([
+        self.p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("ab")
         ])
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["'abcy'"]))
+        self.expectParsingSuccess("abcd", (None, "ab"), 3, ["'abcy'"])
 
     def testSequenceParserTellsIfSomethingCouldHaveBeenBetter_Tie(self):
-        p = SequenceParser([
+        self.p = SequenceParser([
             OptionalParser(LiteralParser("abcy")),
             LiteralParser("abcz")
         ])
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.position, 3)
-        self.assertEqual(r.expected, set(["'abcz'", "'abcy'"]))
+        self.expectParsingFailure("abcd", 3, ["'abcz'", "'abcy'"])
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
-        p = RepetitionParser(
+        self.p = RepetitionParser(
             SequenceParser([
                 OptionalParser(LiteralParser("abcy")),
                 LiteralParser("ab")
             ])
         )
-        r = p.parse(Cursor("abcd"))
-        self.assertEqual(r.failure.position, 3)
-        self.assertEqual(r.failure.expected, set(["'abcy'"]))
+        self.expectParsingSuccess("abcd", [(None, "ab")], 3, ["'abcy'"])
 
     def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
-        p = RepetitionParser(
+        self.p = RepetitionParser(
             AlternativeParser([
                 LiteralParser("ab"),
                 LiteralParser("acd")
             ])
         )
-        r = p.parse(Cursor("ababacab"))
-        self.assertTrue(r.ok)
-        self.assertEqual(r.value, ["ab", "ab"])
-        self.assertEqual(r.failure.position, 6)
-        self.assertEqual(r.failure.expected, set(["'acd'"]))
+        self.expectParsingSuccess("ababacab", ["ab", "ab"], 6, ["'acd'"])
 
     def testAlternativeParserGivesAllExpectedValues(self):
-        p = AlternativeParser([
+        self.p = AlternativeParser([
             AlternativeParser([LiteralParser("xa"), LiteralParser("xb")]),
             AlternativeParser([LiteralParser("xc"), LiteralParser("xd"), LiteralParser("z")])
         ])
-        r = p.parse(Cursor("xe"))
-        self.assertEqual(r.position, 1)
-        self.assertEqual(r.expected, set(["'xa'", "'xb'", "'xc'", "'xd'"]))
+        self.expectParsingFailure("xe", 1, ["'xa'", "'xb'", "'xc'", "'xd'"])
 
 
 class MinimalArithmeticParserTestCase(unittest.TestCase):
