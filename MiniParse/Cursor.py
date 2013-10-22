@@ -25,8 +25,8 @@ class Cursor(object):
             return self
 
         def __exit__(self, type, value, traceback):
-            if type is None:
-                assert self.__ended, args
+            if type is None:  # No need to add an assertion failure to a stack unwinding :-)
+                assert self.__ended
                 if self.__failed:
                     self.__cursor._position = self.__originalPosition
 
