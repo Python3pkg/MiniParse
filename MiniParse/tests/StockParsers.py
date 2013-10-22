@@ -14,10 +14,9 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-import MockMockMock
 
 from MiniParse import parse, SyntaxError
-from MiniParse import LiteralParser, SequenceParser, AlternativeParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser
 
 
 class ParserTestCase(unittest.TestCase):
@@ -173,3 +172,20 @@ class AlternativeWithCommonPrefixAndDifferentLengths(ParserTestCase):
 
     def testFailure6(self):
         self.expectFailure([42, 44, 41], 2, [45])
+
+
+class Optional(ParserTestCase):
+    def setUp(self):
+        self.p = OptionalParser(LiteralParser(42))
+
+    def testSuccess1(self):
+        self.expectSuccess([], None)
+
+    def testSuccess2(self):
+        self.expectSuccess([42], 42)
+
+    def testFailure1(self):
+        self.expectFailure([41], 0, [42])
+
+    def testFailure2(self):
+        self.expectFailure([42, 41], 1, [])
