@@ -422,6 +422,7 @@ class Escape:
         else:
             return r
 
+
 # Rewrite: tests shouldn't change
 class TestCase(unittest.TestCase):
     def parseAndDump(self, input, expectedOutput):
