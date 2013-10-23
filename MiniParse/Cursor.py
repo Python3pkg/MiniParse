@@ -14,83 +14,102 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 
+class _NoValueType:
+    pass
+_NoValue = _NoValueType()
+
+
+class Backtracker:
+    def __init__(self, cursor):
+        self.__cursor = cursor
+        self.__ended = False
+        self.__success = _NoValue
+        self.__expected = _NoValue
+
+    def __enter__(self):
+        self.__cursor._pushBacktracking()
+        return self
+
+    def __exit__(self, type, exception, traceback):
+        if type is None:
+            assert self.__ended
+            self.__cursor._popBacktracking(self.__success, self.__expected)
+
+    def success(self, success):
+        assert not self.__ended
+        self.__ended = True
+        self.__success = success
+        return True
+
+    def expected(self, expected):
+        assert not self.__ended
+        self.__ended = True
+        self.__expected = expected
+        return False
+
+    def failure(self):
+        assert not self.__ended
+        self.__ended = True
+        return False
+
+
 class Cursor(object):
-    class Backtracking(object):
-        def __init__(self, cursor):
-            self.__cursor = cursor
-            self.__ended = False
-            self.__originalPosition = cursor._position
+    class BacktrackingInfo:
+        def __init__(self, position):
+            self.ended = False
+            self.position = position
 
-        def __enter__(self, *args):
-            return self
-
-        def __exit__(self, type, value, traceback):
-            if type is None:  # No need to add an assertion failure to a stack unwinding :-)
-                assert self.__ended
-                if self.__failed:
-                    self.__cursor._position = self.__originalPosition
-
-        @property
-        def current(self):
-            return self.__cursor._current()
-
-        def advance(self):
-            return self.__cursor._advance()
-
-        def success(self, value):
-            self.__end(False)
-            return self.__cursor._success(value)
-
-        def expected(self, expected):
-            self.__end(True)
-            return self.__cursor._expected(expected)
-
-        def failure(self):
-            self.__end(True)
-            return self.__cursor._failure()
-
-        def __end(self, failed):
-            assert not self.__ended
-            self.__failed = failed
-            self.__ended = True
+        def end(self, failed):
+            assert not self.ended
+            self.failed = failed
+            self.ended = True
 
     def __init__(self, tokens):  # @todo Write tests demonstrating that tokens can be a simple iterator
         self.__tokens = tokens
-        self._position = 0
+        self.__position = 0
         self.__maxPosition = 0
         self.__expected = set()
+        self.__backtrackings = []
 
     @property
     def backtracking(self):
-        return Cursor.Backtracking(self)
+        return Backtracker(self)
 
-    def _current(self):
+    def _pushBacktracking(self):
+        self.__backtrackings.append(Cursor.BacktrackingInfo(self.__position))
+
+    def _popBacktracking(self, success, expected):
+        bt = self.__backtrackings.pop()
+        if success is not _NoValue:
+            if self.__position > self.__maxPosition:
+                self.__maxPosition = self.__position
+                self.__expected = set()
+            self.__value = success
+        else:
+            if expected is not _NoValue:
+                if self.__position == self.__maxPosition:
+                    self.__expected.add(expected)
+            self.__position = bt.position
+            self.__value = _NoValue
+
+    @property
+    def current(self):
         assert not self.finished
-        return self.__tokens[self._position]
+        return self.__tokens[self.__position]
 
-    def _advance(self):
+    def advance(self):
         assert not self.finished
-        self._position += 1
+        self.__position += 1
 
-    def _success(self, value):
-        if self._position > self.__maxPosition:
-            self.__maxPosition = self._position
-            self.__expected = set()
-        self.value = value
-        return True
-
-    def _expected(self, expected):
-        if self._position == self.__maxPosition:
-            self.__expected.add(expected)
-        return False
-
-    def _failure(self):
-        return False
+    @property
+    def finished(self):
+        return self.__position == len(self.__tokens)
 
     @property
     def error(self):
         return self.__maxPosition, self.__expected
 
     @property
-    def finished(self):
-        return self._position == len(self.__tokens)
+    def value(self):
+        assert self.__value is not _NoValue
+        return self.__value
