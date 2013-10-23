@@ -18,6 +18,7 @@ import MockMockMock
 
 from MiniParse import parse, SyntaxError
 from MiniParse import SequenceParser
+from MiniParse.Cursor import Cursor
 
 
 class TestCase(unittest.TestCase):
@@ -29,3 +30,9 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             parse(SequenceParser([parser.object]), "")
         self.assertIs(cm.exception, e)
+
+    def testNotEndingTheBacktrackingRaisesAssertionError(self):
+        c = Cursor("")
+        with self.assertRaises(AssertionError):
+            with c.backtracking:
+                pass
