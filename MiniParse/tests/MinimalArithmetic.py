@@ -20,7 +20,7 @@ from MiniParse import OptionalParser, SequenceParser, AlternativeParser, Literal
 from Framework import ParserTestCase
 
 
-class MinimalArithmeticTestCase(ParserTestCase):
+class MinimalArithmetic(ParserTestCase):
     def setUp(self):
         ParserTestCase.setUp(self)
         integer = LiteralParser("1")

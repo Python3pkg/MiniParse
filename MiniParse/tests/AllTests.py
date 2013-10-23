@@ -15,4 +15,4 @@
 
 from StockParsers import *
 from BadBehavior import *
-from MinimalArithmeticTestCase import *
+from MinimalArithmetic import *
