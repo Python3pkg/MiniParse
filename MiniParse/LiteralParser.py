@@ -15,8 +15,9 @@
 
 
 class LiteralParser:
-    def __init__(self, value):
+    def __init__(self, value, expected=None):
         self.__value = value
+        self.__expected = expected or value
 
     def apply(self, cursor):
         with cursor.backtracking as bt:

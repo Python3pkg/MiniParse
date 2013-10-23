@@ -15,8 +15,9 @@
 
 
 class AlternativeParser:
-    def __init__(self, elements):
+    def __init__(self, elements, expected=None):
         self.__elements = elements
+        self.__expected = expected
 
     def apply(self, cursor):
         with cursor.backtracking as bt:  # @todo Remove backtracking, the parser doesn't need it because it consumes nothing by itself

@@ -13,18 +13,24 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import unittest
 
-class SequenceParser:
-    def __init__(self, elements, expected=None):
-        self.__elements = elements
-        self.__expected = expected
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepetitionParser
+from Framework import ParserTestCase
 
-    def apply(self, cursor):
-        with cursor.backtracking as bt:
-            values = []
-            for element in self.__elements:
-                if element.apply(cursor):
-                    values.append(cursor.value)
-                else:
-                    return bt.failure()
-            return bt.success(tuple(values))
+
+class CustomizedExpected(ParserTestCase):
+    def expect(self, expected):
+        self.expectFailure("", 0, [expected])
+
+    def testLiteralParser(self):
+        self.p = LiteralParser(42, "expected")
+        self.expect("expected")
+
+    def testAlternativeParser(self):
+        self.p = AlternativeParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expect("expected")
+
+    def testSequenceParser(self):
+        self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expect("expected")
