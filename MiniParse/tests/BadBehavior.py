@@ -32,7 +32,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(cm.exception, e)
 
     def testNotEndingTheBacktrackingRaisesAssertionError(self):
-        c = Cursor("")
+        cursor = Cursor("")
         with self.assertRaises(AssertionError):
-            with c.backtracking:
-                pass
+            with cursor.backtracking as bt:
+                cursor.success(42)  # should have been bt.success(42)

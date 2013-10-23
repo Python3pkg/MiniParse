@@ -19,8 +19,7 @@ class OptionalParser:
         self.__parser = parser
 
     def apply(self, cursor):
-        with cursor.backtracking as bt:  # @todo Remove backtracking, the parser doesn't need it because it consumes nothing by itself
-            if self.__parser.apply(cursor):
-                return bt.success(cursor.value)
-            else:
-                return bt.success(None)
+        if self.__parser.apply(cursor):
+            return cursor.success(cursor.value)
+        else:
+            return cursor.success(None)

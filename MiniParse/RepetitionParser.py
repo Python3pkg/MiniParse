@@ -19,8 +19,7 @@ class RepetitionParser:
         self.__parser = parser
 
     def apply(self, cursor):
-        with cursor.backtracking as bt:  # @todo Remove backtracking, the parser doesn't need it because it consumes nothing by itself
-            values = []
-            while self.__parser.apply(cursor):
-                values.append(cursor.value)
-            return bt.success(values)
+        values = []
+        while self.__parser.apply(cursor):
+            values.append(cursor.value)
+        return cursor.success(values)

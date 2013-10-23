@@ -22,9 +22,7 @@ _NoValue = _NoValueType()
 class Backtracker:
     def __init__(self, cursor):
         self.__cursor = cursor
-        self.__ended = False
-        self.__success = _NoValue
-        self.__expected = _NoValue
+        self.__failed = None
 
     def __enter__(self):
         self.__cursor._pushBacktracking()
@@ -32,42 +30,35 @@ class Backtracker:
 
     def __exit__(self, type, exception, traceback):
         if type is None:
-            assert self.__ended
-            self.__cursor._popBacktracking(self.__success, self.__expected)
+            assert self.__failed is not None
+            self.__cursor._popBacktracking(self.__failed)
 
     def success(self, success):
-        assert not self.__ended
-        self.__ended = True
-        self.__success = success
-        return True
+        assert self.__failed is None
+        self.__failed = False
+        return self.__cursor.success(success)
 
     def expected(self, expected):
-        assert not self.__ended
-        self.__ended = True
-        self.__expected = expected
-        return False
+        assert self.__failed is None
+        self.__failed = True
+        return self.__cursor.expected(expected)
 
     def failure(self):
-        assert not self.__ended
-        self.__ended = True
-        return False
+        assert self.__failed is None
+        self.__failed = True
+        return self.__cursor.failure()
 
 
 class Cursor(object):
-    class BacktrackingInfo:
+    class __BacktrackingInfo:
         def __init__(self, position):
-            self.ended = False
             self.position = position
-
-        def end(self, failed):
-            assert not self.ended
-            self.failed = failed
-            self.ended = True
 
     def __init__(self, tokens):  # @todo Write tests demonstrating that tokens can be a simple iterator
         self.__tokens = tokens
         self.__position = 0
         self.__maxPosition = 0
+        self.__value = _NoValue
         self.__expected = set()
         self.__backtrackings = []
 
@@ -76,21 +67,13 @@ class Cursor(object):
         return Backtracker(self)
 
     def _pushBacktracking(self):
-        self.__backtrackings.append(Cursor.BacktrackingInfo(self.__position))
+        self.__backtrackings.append(self.__BacktrackingInfo(self.__position))
 
-    def _popBacktracking(self, success, expected):
+    def _popBacktracking(self, failed):
         bt = self.__backtrackings.pop()
-        if success is not _NoValue:
-            if self.__position > self.__maxPosition:
-                self.__maxPosition = self.__position
-                self.__expected = set()
-            self.__value = success
-        else:
-            if expected is not _NoValue:
-                if self.__position == self.__maxPosition:
-                    self.__expected.add(expected)
+        if failed:
             self.__position = bt.position
-            self.__value = _NoValue
+        # @todo if len(self.__backtrackings) == 0: take the opportunity to free the tokens before self.__position: we will never need them again
 
     @property
     def current(self):
@@ -104,6 +87,22 @@ class Cursor(object):
     @property
     def finished(self):
         return self.__position == len(self.__tokens)
+
+    def success(self, success):
+        if self.__position > self.__maxPosition:
+            self.__maxPosition = self.__position
+            self.__expected = set()
+        self.__value = success
+        return True
+
+    def expected(self, expected):
+        if self.__position == self.__maxPosition:
+            self.__expected.add(expected)
+        return self.failure()
+
+    def failure(self):
+        self.__value = _NoValue
+        return False
 
     @property
     def error(self):
