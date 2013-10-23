@@ -20,10 +20,11 @@ class AlternativeParser:
         self.__expected = expected
 
     def apply(self, cursor):
-        for element in self.__elements:
-            if element.apply(cursor):
-                return cursor.success(cursor.value)
-        if self.__expected is None:
-            return cursor.failure()
-        else:
-            return cursor.expected(self.__expected)
+        with cursor.backtracking as bt:  # @todo Here, we need backtracking only because of self.__expected.
+            for element in self.__elements:
+                if element.apply(cursor):
+                    return bt.success(cursor.value)
+            if self.__expected is None:
+                return bt.failure()
+            else:
+                return bt.expected(self.__expected)

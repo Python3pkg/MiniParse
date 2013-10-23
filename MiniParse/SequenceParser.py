@@ -26,5 +26,8 @@ class SequenceParser:
                 if element.apply(cursor):
                     values.append(cursor.value)
                 else:
-                    return bt.failure()
+                    if self.__expected is None:
+                        return bt.failure()
+                    else:
+                        return bt.expected(self.__expected)
             return bt.success(tuple(values))

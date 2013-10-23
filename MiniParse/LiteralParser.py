@@ -17,12 +17,12 @@
 class LiteralParser:
     def __init__(self, value, expected=None):
         self.__value = value
-        self.__expected = expected or value
+        self.__expected = expected
 
     def apply(self, cursor):
         with cursor.backtracking as bt:
             if cursor.finished or cursor.current != self.__value:
-                return bt.expected(self.__value)
+                return bt.expected(self.__expected or self.__value)
             else:
                 cursor.advance()
                 return bt.success(self.__value)

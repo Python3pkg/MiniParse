@@ -49,17 +49,20 @@ class Backtracker:
         return self.__cursor.failure()
 
 
+# @todo TODO Understand exactly why the commented code is not needed
 class Cursor(object):
     class __BacktrackingInfo:
         def __init__(self, position):
-            self.position = position
+            self.initialPosition = position
+            self._maxPosition = position
+            self._expected = set()
 
     def __init__(self, tokens):  # @todo Write tests demonstrating that tokens can be a simple iterator
         self.__tokens = tokens
         self.__position = 0
-        self.__maxPosition = 0
+        self._maxPosition = 0
         self.__value = _NoValue
-        self.__expected = set()
+        self._expected = set()
         self.__backtrackings = []
 
     @property
@@ -70,9 +73,21 @@ class Cursor(object):
         self.__backtrackings.append(self.__BacktrackingInfo(self.__position))
 
     def _popBacktracking(self, failed):
-        bt = self.__backtrackings.pop()
+        orig = self.__backtrackings.pop()
+        if len(self.__backtrackings) > 0:
+            dest = self.__backtrackings[-1]
+        else:
+            dest = self
+        if orig._maxPosition > dest._maxPosition:
+            dest._maxPosition = orig._maxPosition
+            dest._expected = set(orig._expected)
+        elif orig._maxPosition == dest._maxPosition:
+            # if len(orig._expected) == 0:
+            #     dest._expected = set()
+            # else:
+                dest._expected.update(orig._expected)
         if failed:
-            self.__position = bt.position
+            self.__position = orig.initialPosition
         # @todo if len(self.__backtrackings) == 0: take the opportunity to free the tokens before self.__position: we will never need them again
 
     @property
@@ -82,6 +97,7 @@ class Cursor(object):
 
     def advance(self):
         assert not self.finished
+        assert len(self.__backtrackings) > 0
         self.__position += 1
 
     @property
@@ -89,15 +105,28 @@ class Cursor(object):
         return self.__position == len(self.__tokens)
 
     def success(self, success):
-        if self.__position > self.__maxPosition:
-            self.__maxPosition = self.__position
-            self.__expected = set()
+        if len(self.__backtrackings) > 0:
+            bt = self.__backtrackings[-1]
+            if self.__position > bt._maxPosition:
+                bt._maxPosition = self.__position
+                bt._expected = set()
+        # else:
+        #     if self.__position > self._maxPosition:
+        #         self._maxPosition = self.__position
+        #         self._expected = set()
         self.__value = success
         return True
 
     def expected(self, expected):
-        if self.__position == self.__maxPosition:
-            self.__expected.add(expected)
+        assert len(self.__backtrackings) > 0
+        # if len(self.__backtrackings) > 0:
+        bt = self.__backtrackings[-1]
+        assert self.__position == bt._maxPosition
+        bt._maxPosition = bt.initialPosition
+        bt._expected = set([expected])
+        # else:
+        #     assert self.__position == self._maxPosition
+        #     self._expected = set([expected])
         return self.failure()
 
     def failure(self):
@@ -106,7 +135,8 @@ class Cursor(object):
 
     @property
     def error(self):
-        return self.__maxPosition, self.__expected
+        assert len(self.__backtrackings) == 0  # @todo Allow consultation of last error before end
+        return self._maxPosition, self._expected
 
     @property
     def value(self):

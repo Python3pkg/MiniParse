@@ -20,17 +20,90 @@ from Framework import ParserTestCase
 
 
 class CustomizedExpected(ParserTestCase):
-    def expect(self, expected):
-        self.expectFailure("", 0, [expected])
-
-    def testLiteralParser(self):
+    def testLiteralParser1(self):
         self.p = LiteralParser(42, "expected")
-        self.expect("expected")
+        self.expectFailure([], 0, ["expected"])
 
-    def testAlternativeParser(self):
+    def testLiteralParser2(self):
+        self.p = LiteralParser(42, "expected")
+        self.expectFailure([41], 0, ["expected"])
+
+    def testAlternativeParser1(self):
         self.p = AlternativeParser([LiteralParser(42), LiteralParser(43)], "expected")
-        self.expect("expected")
+        self.expectFailure([], 0, ["expected"])
 
-    def testSequenceParser(self):
+    def testAlternativeParser2(self):
+        self.p = AlternativeParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expectFailure([41], 0, ["expected"])
+
+    def testSequenceParser1(self):
         self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], "expected")
-        self.expect("expected")
+        self.expectFailure([], 0, ["expected"])
+
+    def testSequenceParser2(self):
+        self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expectFailure([41], 0, ["expected"])
+
+    def testSequenceParser3(self):
+        self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expectFailure([42], 0, ["expected"])
+
+    def testSequenceParser4(self):
+        self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], "expected")
+        self.expectFailure([42, 41], 0, ["expected"])
+
+
+class ImbricatedCustomizedExpected(ParserTestCase):
+    def setUp(self):
+        self.p = SequenceParser(
+            [
+                LiteralParser('"', "opening quote"),
+                RepetitionParser(AlternativeParser(
+                    [
+                        LiteralParser("a", "A"),
+                        LiteralParser("b", "B"),
+                    ],
+                    "char"
+                )),
+                LiteralParser('"', "closing quote"),
+            ],
+            "string"
+        )
+
+    def testAsIs(self):
+        self.expectFailure('', 0, ["string"])
+        self.expectFailure('"abba', 0, ["string"])
+        self.expectFailure('"abbax', 0, ["string"])
+
+    def testWithoutString(self):
+        self.p._SequenceParser__expected = None
+        self.expectFailure('"abba', 5, ["closing quote", "char"])
+        self.expectFailure('"abbax', 5, ["closing quote", "char"])
+
+    def testWithOnlyLiterals(self):
+        self.p._SequenceParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__expected = None
+        self.expectFailure('', 0, ["opening quote"])
+        self.expectFailure('"abba', 5, ["A", "B", "closing quote"])
+        self.expectFailure('"abbax', 5, ["A", "B", "closing quote"])
+
+    def testWithOnlyAlternative(self):
+        self.p._SequenceParser__expected = None
+        self.p._SequenceParser__elements[0]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__elements[0]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__elements[1]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[2]._LiteralParser__expected = None
+        self.expectFailure('', 0, ['"'])
+        self.expectFailure('"abba', 5, ["char", '"'])
+        self.expectFailure('"abbax', 5, ["char", '"'])
+
+    def testWithoutAnything(self):
+        self.p._SequenceParser__expected = None
+        self.p._SequenceParser__elements[0]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__elements[0]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[1]._RepetitionParser__parser._AlternativeParser__elements[1]._LiteralParser__expected = None
+        self.p._SequenceParser__elements[2]._LiteralParser__expected = None
+        self.expectFailure('', 0, ['"'])
+        self.expectFailure('"abba', 5, ["a", "b", '"'])
+        self.expectFailure('"abbax', 5, ["a", "b", '"'])
