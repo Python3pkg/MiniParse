@@ -15,9 +15,10 @@
 
 
 class SequenceParser:
-    def __init__(self, elements, expected=None):
+    def __init__(self, elements, expected=None, match=lambda x: x):
         self.__elements = elements
         self.__expected = expected
+        self.__match = match
 
     def apply(self, cursor):
         with cursor.backtracking as bt:
@@ -30,4 +31,4 @@ class SequenceParser:
                         return bt.failure()
                     else:
                         return bt.expected(self.__expected)
-            return bt.success(tuple(values))
+            return bt.success(self.__match(tuple(values)))

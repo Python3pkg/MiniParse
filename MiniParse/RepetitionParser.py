@@ -15,11 +15,12 @@
 
 
 class RepetitionParser:
-    def __init__(self, parser):
+    def __init__(self, parser, match=lambda x: x):
         self.__parser = parser
+        self.__match = match
 
     def apply(self, cursor):
         values = []
         while self.__parser.apply(cursor):
             values.append(cursor.value)
-        return cursor.success(values)
+        return cursor.success(self.__match(values))
