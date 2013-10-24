@@ -20,7 +20,7 @@ from MiniParse import LiteralParser, SequenceParser, AlternativeParser, Optional
 from Framework import ParserTestCase
 
 
-class CustomizedExpected(ParserTestCase):
+class CustomizedValue(ParserTestCase):
     def setUp(self):
         self.mocks = MockMockMock.Engine()
         self.match = self.mocks.create("match")

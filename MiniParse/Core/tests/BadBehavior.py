@@ -18,7 +18,7 @@ import MockMockMock
 
 from MiniParse import parse, SyntaxError
 from MiniParse import SequenceParser
-from MiniParse.Cursor import Cursor
+from MiniParse.Core.Cursor import Cursor
 
 
 class TestCase(unittest.TestCase):

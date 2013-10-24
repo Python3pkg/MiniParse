@@ -36,7 +36,8 @@ if __name__ == "__main__":
         """),
         packages=[
             "MiniParse",
-            "MiniParse.tests",
+            "MiniParse.Core",
+            "MiniParse.Core.tests",
         ],
         package_data={
             "MiniParse": ["COPYING*"],
@@ -53,6 +54,6 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.3",
             "Topic :: Software Development",
         ],
-        test_suite="MiniParse.tests.AllTests",
+        test_suite="MiniParse.tests",
         use_2to3=True
     )

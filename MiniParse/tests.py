@@ -15,7 +15,7 @@
 
 import unittest
 
-from . import AllTests
+from Core.tests import *
 
-if __name__ == "__main__":
-    unittest.main(module=AllTests)
+if __name__ == "__main__":  # pragma no branch (Main)
+    unittest.main()  # pragma no cover (Main)

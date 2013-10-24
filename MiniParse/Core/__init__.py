@@ -13,4 +13,10 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+from ParseFunction import parse
+from SyntaxError import SyntaxError
+from LiteralParser import LiteralParser
+from SequenceParser import SequenceParser
+from AlternativeParser import AlternativeParser
+from OptionalParser import OptionalParser
+from RepetitionParser import RepetitionParser
