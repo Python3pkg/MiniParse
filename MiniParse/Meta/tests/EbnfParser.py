@@ -31,10 +31,13 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(self.parser(self.lexer(input)), output)
 
     def testTerminalRule(self):
-        self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", DefinitionsList([Terminal("bar")]))]))
+        self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", Terminal("bar"))]))
 
     def testSeveralDefinitions(self):
-        self.parse("foo = 'bar'; foo='baz';", Syntax([SyntaxRule("foo", DefinitionsList([Terminal("bar")])), SyntaxRule("foo", DefinitionsList([Terminal("baz")]))]))
+        self.parse("foo = 'bar'; foo='baz';", Syntax([SyntaxRule("foo", Terminal("bar")), SyntaxRule("foo", Terminal("baz"))]))
+
+    def testDefinitionsList(self):
+        self.parse("foo = 'bar' | 'baz';", Syntax([SyntaxRule("foo", DefinitionsList([Terminal("bar"), Terminal("baz")]))]))
 
     # def testEbnfSyntax(self):
     #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())
