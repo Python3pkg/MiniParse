@@ -15,15 +15,14 @@
 
 
 class LiteralParser:
-    def __init__(self, value, expected=None, match=None):
+    def __init__(self, value, match=None):
         self.__value = value
-        self.__expected = expected
-        self.__match = match
+        self.__match = match or value
 
     def apply(self, cursor):
         with cursor.backtracking as bt:
             if cursor.finished or cursor.current != self.__value:
-                return bt.expected(self.__expected or self.__value)
+                return bt.expected(self.__value)
             else:
                 cursor.advance()
-                return bt.success(self.__match or self.__value)
+                return bt.success(self.__match)

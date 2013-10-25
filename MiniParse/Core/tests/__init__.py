@@ -16,5 +16,4 @@
 from StockParsers import *
 from BadBehavior import *
 from MinimalArithmetic import *
-from CustomizedExpected import *
 from CustomizedValue import *
