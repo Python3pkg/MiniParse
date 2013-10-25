@@ -38,7 +38,7 @@ class ClassParser:
 # See http://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf
 class Parser:
     # 4.21
-    emptySequence = SequenceParser([], lambda: Empty())
+    emptySequence = SequenceParser([], lambda: Sequence([]))
 
     # 4.16
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))

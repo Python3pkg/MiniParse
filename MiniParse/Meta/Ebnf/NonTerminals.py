@@ -70,7 +70,3 @@ class Restriction(_deepComparable):
     def __init__(self, base, exception):
         self.__base = base
         self.__exception = exception
-
-
-class Empty(_deepComparable):
-    pass

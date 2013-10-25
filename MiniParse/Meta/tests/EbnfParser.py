@@ -73,7 +73,7 @@ class ParserTestCase(unittest.TestCase):
         )
 
     def testEmpty(self):
-        self.parse("foo = ;", Syntax([SyntaxRule("foo", Empty())]))
+        self.parse("foo = ;", Syntax([SyntaxRule("foo", Sequence([]))]))
 
     def testComplexRule(self):
         self.parse(
