@@ -51,8 +51,23 @@ class ClassParser:
 class Parser:
     metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
+    integer = ClassParser(Tok.Integer, lambda i: i.value)
 
-    syntacticTerm = terminal
+    syntacticPrimary = terminal
+
+    # 4.8
+    syntacticFactor = AlternativeParser(
+        [
+            SequenceParser(
+                [integer, LiteralParser(Tok.Repetition), syntacticPrimary],
+                lambda i, rep, p: Repetition(i, p)
+            ),
+            syntacticPrimary
+        ]
+    )
+
+    # @todo Implement 4.6 (and 4.7)
+    syntacticTerm = syntacticFactor
 
     # 4.5
     singleDefinition = SequenceParser(

@@ -42,5 +42,8 @@ class ParserTestCase(unittest.TestCase):
     def testConcatenation(self):
         self.parse("foo = 'bar', 'baz';", Syntax([SyntaxRule("foo", SingleDefinition([Terminal("bar"), Terminal("baz")]))]))
 
+    def testRepetition(self):
+        self.parse("foo = 3 * 'bar';", Syntax([SyntaxRule("foo", Repetition(3, Terminal("bar")))]))
+
     # def testEbnfSyntax(self):
     #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())
