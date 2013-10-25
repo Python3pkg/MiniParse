@@ -51,9 +51,12 @@ class ClassParser:
 class Parser:
     metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
-    integer = ClassParser(Tok.Integer, lambda i: i.value)
 
+    # 4.10
     syntacticPrimary = terminal
+
+    # 4.9
+    integer = ClassParser(Tok.Integer, lambda i: i.value)
 
     # 4.8
     syntacticFactor = AlternativeParser(
