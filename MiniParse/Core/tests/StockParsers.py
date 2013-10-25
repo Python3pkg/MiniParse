@@ -15,11 +15,11 @@
 
 import unittest
 
-from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepetitionParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser
 from Framework import ParserTestCase
 
 
-class Literal(ParserTestCase):
+class LiteralTestCase(ParserTestCase):
     def setUp(self):
         self.p = LiteralParser(42)
 
@@ -36,7 +36,7 @@ class Literal(ParserTestCase):
         self.expectFailure([42, 43], 1, [])
 
 
-class Sequence(ParserTestCase):
+class SequenceTestCase(ParserTestCase):
     def setUp(self):
         self.p = SequenceParser([
             LiteralParser(42),
@@ -76,7 +76,7 @@ class Sequence(ParserTestCase):
         self.expectFailure([42, 43, 44, 45, 46], 4, [])
 
 
-class UnambiguousAlternative(ParserTestCase):
+class UnambiguousAlternativeTestCase(ParserTestCase):
     def setUp(self):
         self.p = AlternativeParser([
             SequenceParser([LiteralParser(42), LiteralParser(43)]),
@@ -127,7 +127,7 @@ class UnambiguousAlternative(ParserTestCase):
         self.expectFailure([46, 47, 41], 2, [])
 
 
-class AlternativeWithCommonPrefixAndDifferentLengths(ParserTestCase):
+class AlternativeWithCommonPrefixAndDifferentLengthsTestCase(ParserTestCase):
     def setUp(self):
         self.p = AlternativeParser([
             SequenceParser([LiteralParser(42), LiteralParser(43)]),
@@ -163,7 +163,7 @@ class AlternativeWithCommonPrefixAndDifferentLengths(ParserTestCase):
         self.expectFailure([42, 44, 41], 2, [45])
 
 
-class Optional(ParserTestCase):
+class OptionalTestCase(ParserTestCase):
     def setUp(self):
         self.p = OptionalParser(LiteralParser(42))
 
@@ -180,9 +180,9 @@ class Optional(ParserTestCase):
         self.expectFailure([42, 41], 1, [])
 
 
-class Repetition(ParserTestCase):
+class RepetitionTestCase(ParserTestCase):
     def setUp(self):
-        self.p = RepetitionParser(LiteralParser(42))
+        self.p = RepeatedParser(LiteralParser(42))
 
     def testSuccess0(self):
         self.expectSuccess([], [])

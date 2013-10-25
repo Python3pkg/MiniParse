@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class RepetitionParser:
+class RepeatedParser:
     def __init__(self, parser, match=lambda x: x):
         self.__parser = parser
         self.__match = match

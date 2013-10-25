@@ -16,7 +16,7 @@
 import unittest
 import MockMockMock
 
-from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepetitionParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser
 from Framework import ParserTestCase
 
 
@@ -49,6 +49,6 @@ class CustomizedValue(ParserTestCase):
         self.expectSuccess([], 43)
 
     def testRepetition(self):
-        self.p = RepetitionParser(LiteralParser(42), match=self.match.object)
+        self.p = RepeatedParser(LiteralParser(42), match=self.match.object)
         self.match.expect([42, 42]).andReturn(43)
         self.expectSuccess([42, 42], 43)

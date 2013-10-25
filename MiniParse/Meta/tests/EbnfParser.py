@@ -30,17 +30,17 @@ class ParserTestCase(unittest.TestCase):
     def parse(self, input, output):
         self.assertEqual(self.parser(self.lexer(input)), output)
 
-    def testTerminalRule(self):
+    def testTerminal(self):
         self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", Terminal("bar"))]))
 
-    def testSeveralDefinitions(self):
+    def testSeveralRules(self):
         self.parse("foo = 'bar'; foo='baz';", Syntax([SyntaxRule("foo", Terminal("bar")), SyntaxRule("foo", Terminal("baz"))]))
 
-    def testDefinitionsList(self):
-        self.parse("foo = 'bar' | 'baz';", Syntax([SyntaxRule("foo", DefinitionsList([Terminal("bar"), Terminal("baz")]))]))
+    def testAlternative(self):
+        self.parse("foo = 'bar' | 'baz';", Syntax([SyntaxRule("foo", Alternative([Terminal("bar"), Terminal("baz")]))]))
 
-    def testConcatenation(self):
-        self.parse("foo = 'bar', 'baz';", Syntax([SyntaxRule("foo", SingleDefinition([Terminal("bar"), Terminal("baz")]))]))
+    def testSequence(self):
+        self.parse("foo = 'bar', 'baz';", Syntax([SyntaxRule("foo", Sequence([Terminal("bar"), Terminal("baz")]))]))
 
     def testRepetition(self):
         self.parse("foo = 3 * 'bar';", Syntax([SyntaxRule("foo", Repetition(3, Terminal("bar")))]))
@@ -64,12 +64,12 @@ class ParserTestCase(unittest.TestCase):
                 SyntaxRule(
                     'foo',
                     Repeated(
-                        SingleDefinition([
+                        Sequence([
                             NonTerminal('bar'),
                             Terminal('baz'),
                             Repeated(
-                                DefinitionsList([
-                                    SingleDefinition([
+                                Alternative([
+                                    Sequence([
                                         Repetition(2, Terminal('to')),
                                         Repeated(Terminal('tutu'))
                                     ]),

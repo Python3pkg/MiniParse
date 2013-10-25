@@ -16,7 +16,7 @@
 import unittest
 
 # Rewrite: should not change
-from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser
+from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser
 # Rewrite: will change
 from MiniParse import Cursor
 
@@ -77,8 +77,8 @@ class ErrorHandling(ParserTestCase):
         ])
         self.expectParsingFailure("abcd", 3, ["'abcz'", "'abcy'"])
 
-    def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter(self):
-        self.p = RepetitionParser(
+    def testRepeatedParserTellsIfSomethingCouldHaveBeenBetter(self):
+        self.p = RepeatedParser(
             SequenceParser([
                 OptionalParser(LiteralParser("abcy")),
                 LiteralParser("ab")
@@ -86,8 +86,8 @@ class ErrorHandling(ParserTestCase):
         )
         self.expectParsingSuccess("abcd", [(None, "ab")], 3, ["'abcy'"])
 
-    def testRepetitionParserTellsIfSomethingCouldHaveBeenBetter_2(self):
-        self.p = RepetitionParser(
+    def testRepeatedParserTellsIfSomethingCouldHaveBeenBetter_2(self):
+        self.p = RepeatedParser(
             AlternativeParser([
                 LiteralParser("ab"),
                 LiteralParser("acd")

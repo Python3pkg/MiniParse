@@ -18,8 +18,8 @@ import collections
 
 Syntax = collections.namedtuple("Syntax", "rules")
 SyntaxRule = collections.namedtuple("SyntaxRule", "name,definition")
-SingleDefinition = collections.namedtuple("SingleDefinition", "terms")
-DefinitionsList = collections.namedtuple("DefinitionsList", "definitions")
+Sequence = collections.namedtuple("Sequence", "terms")
+Alternative = collections.namedtuple("Alternative", "definitions")
 Repetition = collections.namedtuple("Repetition", "number,primary")
 Optional = collections.namedtuple("Optional", "definition")
 Repeated = collections.namedtuple("Repeated", "definition")

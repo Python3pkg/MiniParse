@@ -15,7 +15,7 @@
 
 import unittest
 
-from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser
+from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser
 
 from Framework import ParserTestCase
 
@@ -39,7 +39,7 @@ class MinimalArithmetic(ParserTestCase):
 
         term = SequenceParser([
             factor,
-            RepetitionParser(SequenceParser([
+            RepeatedParser(SequenceParser([
                 LiteralParser("*"),
                 factor
             ]))
@@ -47,7 +47,7 @@ class MinimalArithmetic(ParserTestCase):
 
         expr = SequenceParser([
             term,
-            RepetitionParser(SequenceParser([
+            RepeatedParser(SequenceParser([
                 LiteralParser("+"),
                 term
             ]))

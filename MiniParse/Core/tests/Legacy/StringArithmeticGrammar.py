@@ -16,7 +16,7 @@
 import unittest
 
 # Rewrite: should not change
-from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepetitionParser, SyntaxError
+from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser, SyntaxError
 # Rewrite: will change
 from MiniParse import ParsingSuccess, Cursor
 
@@ -47,7 +47,7 @@ class StringExpr:
         r = SequenceParser(
             [
                 StringTerm,
-                RepetitionParser(
+                RepeatedParser(
                     SequenceParser(
                         [
                             LiteralParser("+"),
@@ -159,7 +159,7 @@ class IntTerm:
         r = SequenceParser(
             [
                 IntFactor,
-                RepetitionParser(
+                RepeatedParser(
                     SequenceParser(
                         [
                             AlternativeParser([LiteralParser("*"), LiteralParser("/")]),
@@ -230,7 +230,7 @@ class IntExpr:
         r = SequenceParser(
             [
                 IntTerm,
-                RepetitionParser(
+                RepeatedParser(
                     SequenceParser(
                         [
                             AlternativeParser([LiteralParser("+"), LiteralParser("-")]),
@@ -269,7 +269,7 @@ class Int:
             [
                 OptionalParser(LiteralParser("-")),
                 Digit,
-                RepetitionParser(Digit)
+                RepeatedParser(Digit)
             ]
         ).parse(c)
         if r.ok:
@@ -323,7 +323,7 @@ class String:
         r = SequenceParser(
             [
                 LiteralParser('"', expected="opening quote"),
-                RepetitionParser(StringElement),
+                RepeatedParser(StringElement),
                 LiteralParser('"', expected="closing quote")
             ]
         ).parse(c)

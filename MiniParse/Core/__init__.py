@@ -19,4 +19,4 @@ from LiteralParser import LiteralParser
 from SequenceParser import SequenceParser
 from AlternativeParser import AlternativeParser
 from OptionalParser import OptionalParser
-from RepetitionParser import RepetitionParser
+from RepeatedParser import RepeatedParser

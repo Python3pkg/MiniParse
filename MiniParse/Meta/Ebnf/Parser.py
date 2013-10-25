@@ -14,23 +14,10 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 import MiniParse
-from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepetitionParser
+from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser
 
 import Tokens as Tok
 from NonTerminals import *
-
-
-class TransformingParser:  # Temporary class to TDD the parser
-    def __init__(self, parser, match):
-        self.__parser = parser
-        self.__match = match
-
-    def apply(self, cursor):
-        with cursor.backtracking as bt:
-            if self.__parser.apply(cursor):
-                return bt.success(self.__match(cursor.value))
-            else:
-                return bt.failure()
 
 
 class ClassParser:
@@ -129,28 +116,28 @@ class Parser:
     singleDefinition = SequenceParser(
         [
             syntacticTerm,
-            RepetitionParser(
+            RepeatedParser(
                 SequenceParser(
                     [LiteralParser(Tok.Concatenate), syntacticTerm],
                     lambda s, d: d
                 )
             )
         ],
-        lambda t1, ts: t1 if len(ts) == 0 else SingleDefinition([t1] + ts)
+        lambda t1, ts: t1 if len(ts) == 0 else Sequence([t1] + ts)
     )
 
     # 4.4
     definitionsList = SequenceParser(
         [
             singleDefinition,
-            RepetitionParser(
+            RepeatedParser(
                 SequenceParser(
                     [LiteralParser(Tok.DefinitionSeparator), singleDefinition],
                     lambda s, d: d
                 )
             )
         ],
-        lambda d1, ds: d1 if len(ds) == 0 else DefinitionsList([d1] + ds)
+        lambda d1, ds: d1 if len(ds) == 0 else Alternative([d1] + ds)
     )
 
     # 4.3
@@ -160,7 +147,7 @@ class Parser:
     )
 
     # 4.2
-    syntax = RepetitionParser(syntaxRule, Syntax)
+    syntax = RepeatedParser(syntaxRule, Syntax)
 
     def __call__(self, tokens):
         try:
