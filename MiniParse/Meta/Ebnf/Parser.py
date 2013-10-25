@@ -35,7 +35,11 @@ class ClassParser:
                 return bt.success(self.__match(m))
 
 
+# See http://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf
 class Parser:
+    # 4.21
+    emptySequence = SequenceParser([], lambda: Empty())
+
     # 4.16
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
 
@@ -90,8 +94,8 @@ class Parser:
             groupedSequence,
             nonTerminal,
             terminal,
-            # specialSequence,  # @todo Implement?
-            # emptySequence  # @todo Implement?
+            # specialSequence,  # @todo Implement
+            emptySequence
         ]
     )
 
