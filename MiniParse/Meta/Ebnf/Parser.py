@@ -49,11 +49,64 @@ class ClassParser:
 
 
 class Parser:
-    metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
+    # 4.16
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
 
+    # 4.14
+    metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
+    nonTerminal = ClassParser(Tok.MetaIdentifier, lambda name: NonTerminal(" ".join(name.value)))
+
+    # 4.13
+    class groupedSequence:
+        @staticmethod
+        def apply(cursor):
+            return SequenceParser(
+                [
+                    LiteralParser(Tok.StartGroup),
+                    Parser.definitionsList,
+                    LiteralParser(Tok.EndGroup)
+                ],
+                lambda s, d, e: d
+            ).apply(cursor)
+
+    # 4.12
+    class repeatedSequence:
+        @staticmethod
+        def apply(cursor):
+            return SequenceParser(
+                [
+                    LiteralParser(Tok.StartRepeat),
+                    Parser.definitionsList,
+                    LiteralParser(Tok.EndRepeat)
+                ],
+                lambda s, d, e: Repeated(d)
+            ).apply(cursor)
+
+    # 4.11
+    class optionalSequence:
+        @staticmethod
+        def apply(cursor):
+            return SequenceParser(
+                [
+                    LiteralParser(Tok.StartOption),
+                    Parser.definitionsList,
+                    LiteralParser(Tok.EndOption)
+                ],
+                lambda s, d, e: Optional(d)
+            ).apply(cursor)
+
     # 4.10
-    syntacticPrimary = terminal
+    syntacticPrimary = AlternativeParser(
+        [
+            optionalSequence,
+            repeatedSequence,
+            groupedSequence,
+            nonTerminal,
+            terminal,
+            # specialSequence,  # @todo Implement?
+            # emptySequence  # @todo Implement?
+        ]
+    )
 
     # 4.9
     integer = ClassParser(Tok.Integer, lambda i: i.value)

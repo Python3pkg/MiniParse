@@ -45,5 +45,42 @@ class ParserTestCase(unittest.TestCase):
     def testRepetition(self):
         self.parse("foo = 3 * 'bar';", Syntax([SyntaxRule("foo", Repetition(3, Terminal("bar")))]))
 
+    def testOption(self):
+        self.parse("foo = ['bar'];", Syntax([SyntaxRule("foo", Optional(Terminal("bar")))]))
+
+    def testRepeated(self):
+        self.parse("foo = {'bar'};", Syntax([SyntaxRule("foo", Repeated(Terminal("bar")))]))
+
+    def testGroup(self):
+        self.parse("foo = ('bar');", Syntax([SyntaxRule("foo", Terminal("bar"))]))
+
+    def testNonTerminal(self):
+        self.parse("foo = bar;", Syntax([SyntaxRule("foo", NonTerminal("bar"))]))
+
+    def testComplexRule(self):
+        self.parse(
+            "foo = {bar, 'baz', {(2 * 'to', {'tutu'}) | blabla}};",
+            Syntax([
+                SyntaxRule(
+                    'foo',
+                    Repeated(
+                        SingleDefinition([
+                            NonTerminal('bar'),
+                            Terminal('baz'),
+                            Repeated(
+                                DefinitionsList([
+                                    SingleDefinition([
+                                        Repetition(2, Terminal('to')),
+                                        Repeated(Terminal('tutu'))
+                                    ]),
+                                    NonTerminal('blabla')
+                                ])
+                            )
+                        ])
+                    )
+                )
+            ])
+        )
+
     # def testEbnfSyntax(self):
     #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())
