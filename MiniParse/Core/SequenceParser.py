@@ -15,7 +15,7 @@
 
 
 class SequenceParser:
-    def __init__(self, elements, match=lambda x: x):
+    def __init__(self, elements, match=None):
         self.__elements = elements
         self.__match = match
 
@@ -27,4 +27,7 @@ class SequenceParser:
                     values.append(cursor.value)
                 else:
                     return bt.failure()
-            return bt.success(self.__match(tuple(values)))
+            if self.__match is None:
+                return bt.success(tuple(values))
+            else:
+                return bt.success(self.__match(*values))

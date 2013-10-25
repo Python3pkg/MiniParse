@@ -39,7 +39,7 @@ class CustomizedValue(ParserTestCase):
 
     def testSequenceParser(self):
         self.p = SequenceParser([LiteralParser(42), LiteralParser(43)], match=self.match.object)
-        self.match.expect((42, 43)).andReturn(45)
+        self.match.expect(42, 43).andReturn(45)
         self.expectSuccess([42, 43], 45)
 
     def testOptionalParser(self):
