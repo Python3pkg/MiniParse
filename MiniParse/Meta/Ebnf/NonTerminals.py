@@ -13,5 +13,10 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from EbnfLexer import *
-from EbnfParser import *
+import collections
+
+
+Syntax = collections.namedtuple("Syntax", "rules")
+SyntaxRule = collections.namedtuple("SyntaxRule", "name,definitionsList")
+DefinitionsList = collections.namedtuple("DefinitionsList", "definitions")
+Terminal = collections.namedtuple("Terminal", "value")
