@@ -1,3 +1,4 @@
+#!/usr/env/bin python
 # -*- coding: utf-8 -*-
 
 # Copyright 2013 Vincent Jacques
@@ -13,11 +14,14 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
+import sys
 
-from Core.tests import *
-from Meta.tests import *
-from Examples.StringArithmetic.tests import *
+import Ebnf.Lexer
+import Ebnf.Parser
 
-if __name__ == "__main__":  # pragma no branch (Main)
-    unittest.main()  # pragma no cover (Main)
+l = Ebnf.Lexer.Lexer()
+p = Ebnf.Parser.Parser()
+g = p(l(open(sys.argv[1]).read()))
+
+assert sys.argv[1].endswith(".ebnf")
+open(sys.argv[1][:-5] + ".py", "w").write(g.generateMiniParser())

@@ -23,21 +23,47 @@ class Syntax(_deepComparable):
     def __init__(self, rules):
         self.__rules = rules
 
+    def generateMiniParser(self):
+        return (
+            "from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser\n"
+            + "\n"
+            + "import Syntax\n"
+            + "\n"
+            + "\n"
+            + "".join(rule.generate() for rule in self.__rules)
+        )
+
 
 class SyntaxRule(_deepComparable):
     def __init__(self, name, definition):
         self.__name = name
         self.__definition = definition
 
+    def generate(self):
+        return (
+            "class " + self.__name + "Parser:\n"
+            + "    @staticmethod\n"
+            + "    def apply(cursor):\n"
+            + "        return " + self.__definition.generate(", Syntax." + self.__name) + ".apply(cursor)\n"
+            + "\n"
+            + "\n"
+        )
+
 
 class Sequence(_deepComparable):
     def __init__(self, terms):
         self.__terms = terms
 
+    def generate(self, args=""):
+        return "SequenceParser([" + ", ".join(t.generate() for t in self.__terms) + "]" + args + ")"
+
 
 class Alternative(_deepComparable):
     def __init__(self, definitions):
         self.__definitions = definitions
+
+    def generate(self, args=""):
+        return "AlternativeParser([" + ", ".join(d.generate() for d in self.__definitions) + "]" + args + ")"
 
 
 class Repetition(_deepComparable):
@@ -50,20 +76,32 @@ class Optional(_deepComparable):
     def __init__(self, definition):
         self.__definition = definition
 
+    def generate(self, args=""):
+        return "OptionalParser(" + self.__definition.generate() + args + ")"
+
 
 class Repeated(_deepComparable):
     def __init__(self, definition):
         self.__definition = definition
+
+    def generate(self, args=""):
+        return "RepeatedParser(" + self.__definition.generate() + args + ")"
 
 
 class Terminal(_deepComparable):
     def __init__(self, value):
         self.__value = value
 
+    def generate(self):
+        return "LiteralParser('" + self.__value + "')"
+
 
 class NonTerminal(_deepComparable):
     def __init__(self, name):
         self.__name = name
+
+    def generate(self):
+        return self.__name + "Parser"
 
 
 class Restriction(_deepComparable):
