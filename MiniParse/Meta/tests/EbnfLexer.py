@@ -53,7 +53,7 @@ class LexerTestCase(unittest.TestCase):
         self.lex('"str\'ing"', [Tok.Terminal("""str'ing""")])
 
     def testComment(self):
-        self.lex("(* foo\nbar *)", [Tok.Comment("""foo\nbar""")])
+        self.lex("(* foo\nbar *)", [])
 
     def testMetaIdentifier(self):
         self.lex("foo\nbar\tbaz toto", [Tok.MetaIdentifier(["foo", "bar", "baz", "toto"])])

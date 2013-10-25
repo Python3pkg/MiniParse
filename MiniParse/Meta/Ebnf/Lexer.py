@@ -49,7 +49,8 @@ class Lexer:
         i = self.__skipSpaces(s, 0)
         while i < len(s):
             i, tok = self.__next(s, i)
-            yield tok
+            if not isinstance(tok, Tok.Comment):
+                yield tok
 
     def __skipSpaces(self, s, i):
         return self.__space.match(s, i).end()
