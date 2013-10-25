@@ -49,10 +49,8 @@ class ClassParser:
 
 
 class Parser:
-    defining = LiteralParser(Tok.Defining)
     metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
-    terminator = LiteralParser(Tok.Terminator)
 
     syntacticTerm = terminal
 
@@ -86,7 +84,7 @@ class Parser:
 
     # 4.3
     syntaxRule = SequenceParser(
-        [metaIdentifier, defining, definitionsList, terminator],
+        [metaIdentifier, LiteralParser(Tok.Defining), definitionsList, LiteralParser(Tok.Terminator)],
         lambda name, defining, value, terminator: SyntaxRule(name, value)
     )
 
