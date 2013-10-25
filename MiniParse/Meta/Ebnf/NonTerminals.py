@@ -13,17 +13,64 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import collections
+
+class _deepComparable:
+    def __eq__(self, other):
+        return other.__class__ is self.__class__ and other.__dict__ == self.__dict__
 
 
-Syntax = collections.namedtuple("Syntax", "rules")
-SyntaxRule = collections.namedtuple("SyntaxRule", "name,definition")
-Sequence = collections.namedtuple("Sequence", "terms")
-Alternative = collections.namedtuple("Alternative", "definitions")
-Repetition = collections.namedtuple("Repetition", "number,primary")
-Optional = collections.namedtuple("Optional", "definition")
-Repeated = collections.namedtuple("Repeated", "definition")
-Terminal = collections.namedtuple("Terminal", "value")
-NonTerminal = collections.namedtuple("NonTerminal", "name")
-Restriction = collections.namedtuple("Restriction", "base,exception")
-Empty = collections.namedtuple("Empty", "")
+class Syntax(_deepComparable):
+    def __init__(self, rules):
+        self.__rules = rules
+
+
+class SyntaxRule(_deepComparable):
+    def __init__(self, name, definition):
+        self.__name = name
+        self.__definition = definition
+
+
+class Sequence(_deepComparable):
+    def __init__(self, terms):
+        self.__terms = terms
+
+
+class Alternative(_deepComparable):
+    def __init__(self, definitions):
+        self.__definitions = definitions
+
+
+class Repetition(_deepComparable):
+    def __init__(self, number, primary):
+        self.__number = number
+        self.__primary = primary
+
+
+class Optional(_deepComparable):
+    def __init__(self, definition):
+        self.__definition = definition
+
+
+class Repeated(_deepComparable):
+    def __init__(self, definition):
+        self.__definition = definition
+
+
+class Terminal(_deepComparable):
+    def __init__(self, value):
+        self.__value = value
+
+
+class NonTerminal(_deepComparable):
+    def __init__(self, name):
+        self.__name = name
+
+
+class Restriction(_deepComparable):
+    def __init__(self, base, exception):
+        self.__base = base
+        self.__exception = exception
+
+
+class Empty(_deepComparable):
+    pass
