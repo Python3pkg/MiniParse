@@ -17,6 +17,7 @@ import collections
 
 
 Syntax = collections.namedtuple("Syntax", "rules")
-SyntaxRule = collections.namedtuple("SyntaxRule", "name,definitionsList")
+SyntaxRule = collections.namedtuple("SyntaxRule", "name,definition")
+SingleDefinition = collections.namedtuple("SingleDefinition", "terms")
 DefinitionsList = collections.namedtuple("DefinitionsList", "definitions")
 Terminal = collections.namedtuple("Terminal", "value")

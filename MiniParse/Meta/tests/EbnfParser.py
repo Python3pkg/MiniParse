@@ -39,5 +39,8 @@ class ParserTestCase(unittest.TestCase):
     def testDefinitionsList(self):
         self.parse("foo = 'bar' | 'baz';", Syntax([SyntaxRule("foo", DefinitionsList([Terminal("bar"), Terminal("baz")]))]))
 
+    def testConcatenation(self):
+        self.parse("foo = 'bar', 'baz';", Syntax([SyntaxRule("foo", SingleDefinition([Terminal("bar"), Terminal("baz")]))]))
+
     # def testEbnfSyntax(self):
     #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())

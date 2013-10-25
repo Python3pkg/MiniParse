@@ -54,7 +54,21 @@ class Parser:
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
     terminator = LiteralParser(Tok.Terminator)
 
-    singleDefinition = terminal
+    syntacticTerm = terminal
+
+    # 4.5
+    singleDefinition = SequenceParser(
+        [
+            syntacticTerm,
+            RepetitionParser(
+                SequenceParser(
+                    [LiteralParser(Tok.Concatenate), syntacticTerm],
+                    lambda s, d: d
+                )
+            )
+        ],
+        lambda t1, ts: t1 if len(ts) == 0 else SingleDefinition([t1] + ts)
+    )
 
     # 4.4
     definitionsList = SequenceParser(
