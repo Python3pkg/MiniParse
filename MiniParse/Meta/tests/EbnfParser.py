@@ -60,6 +60,21 @@ class ParserTestCase(unittest.TestCase):
     def testRestriction(self):
         self.parse("foo = bar - baz;", Syntax([SyntaxRule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
 
+    def testGroupedRestriction1(self):
+        self.parse("foo = (bar) - (baz);", Syntax([SyntaxRule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
+
+    def testGroupedRestriction2(self):
+        self.parse(
+            "foo = (bar, toto) - (baz | tutu);",
+            Syntax([SyntaxRule(
+                'foo',
+                Restriction(Sequence([NonTerminal('bar'), NonTerminal('toto')]), Alternative([NonTerminal('baz'), NonTerminal('tutu')]))
+            )])
+        )
+
+    def testEmpty(self):
+        self.parse("foo = ;", Syntax([SyntaxRule("foo", Empty())]))
+
     def testComplexRule(self):
         self.parse(
             "foo = {bar, 'baz', {(2 * 'to', {'tutu'}) | blabla}};",
@@ -85,5 +100,6 @@ class ParserTestCase(unittest.TestCase):
             ])
         )
 
-    # def testEbnfSyntax(self):
-    #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read(), None)
+    def testEbnfSyntax(self):
+        # Check that no exception is raised
+        self.parser(self.lexer(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read()))
