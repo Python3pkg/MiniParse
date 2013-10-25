@@ -40,14 +40,17 @@ class SyntaxRule(_deepComparable):
         self.__definition = definition
 
     def generate(self):
-        return (
-            "class " + self.__name + "Parser:\n"
-            + "    @staticmethod\n"
-            + "    def apply(cursor):\n"
-            + "        return " + self.__definition.generate(", Syntax." + self.__name) + ".apply(cursor)\n"
-            + "\n"
-            + "\n"
-        )
+        if isinstance(self.__definition, (Terminal, NonTerminal)):
+            return self.__name + "Parser = " + self.__definition.generate() + "\n"
+        else:
+            return (
+                "class " + self.__name + "Parser:\n"
+                + "    @staticmethod\n"
+                + "    def apply(cursor):\n"
+                + "        return " + self.__definition.generate(", Syntax." + self.__name) + ".apply(cursor)\n"
+                + "\n"
+                + "\n"
+            )
 
 
 class Sequence(_deepComparable):
@@ -108,3 +111,6 @@ class Restriction(_deepComparable):
     def __init__(self, base, exception):
         self.__base = base
         self.__exception = exception
+
+    def generate(self, args=""):
+        return "RestrictionParser(" + self.__base.generate() + ", " + self.__exception.generate() + args + ")"

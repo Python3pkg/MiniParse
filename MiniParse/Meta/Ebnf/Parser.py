@@ -44,8 +44,8 @@ class Parser:
     terminal = ClassParser(Tok.Terminal, lambda t: Terminal(t.value))
 
     # 4.14
-    metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: " ".join(name.value))
-    nonTerminal = ClassParser(Tok.MetaIdentifier, lambda name: NonTerminal(" ".join(name.value)))
+    metaIdentifier = ClassParser(Tok.MetaIdentifier, lambda name: "_".join(name.value))
+    nonTerminal = ClassParser(Tok.MetaIdentifier, lambda name: NonTerminal("_".join(name.value)))
 
     # 4.13
     class groupedSequence:
