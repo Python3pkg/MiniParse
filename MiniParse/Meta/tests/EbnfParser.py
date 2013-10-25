@@ -57,6 +57,9 @@ class ParserTestCase(unittest.TestCase):
     def testNonTerminal(self):
         self.parse("foo = bar;", Syntax([SyntaxRule("foo", NonTerminal("bar"))]))
 
+    def testRestriction(self):
+        self.parse("foo = bar - baz;", Syntax([SyntaxRule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
+
     def testComplexRule(self):
         self.parse(
             "foo = {bar, 'baz', {(2 * 'to', {'tutu'}) | blabla}};",
@@ -83,4 +86,4 @@ class ParserTestCase(unittest.TestCase):
         )
 
     # def testEbnfSyntax(self):
-    #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())
+    #     self.parse(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read(), None)

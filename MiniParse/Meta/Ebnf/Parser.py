@@ -109,8 +109,23 @@ class Parser:
         ]
     )
 
-    # @todo Implement 4.6 (and 4.7)
-    syntacticTerm = syntacticFactor
+    # 4.7
+    syntacticException = syntacticFactor
+
+    # 4.6 and 4.7
+    syntacticTerm = AlternativeParser(
+        [
+            SequenceParser(
+                [
+                    syntacticFactor,
+                    LiteralParser(Tok.Except),
+                    syntacticException
+                ],
+                lambda a, e, b: Restriction(a, b)
+            ),
+            syntacticFactor
+        ]
+    )
 
     # 4.5
     singleDefinition = SequenceParser(
@@ -153,5 +168,7 @@ class Parser:
         try:
             return MiniParse.parse(self.syntax, tokens)
         except MiniParse.SyntaxError, e:
-            print "Expected", " or ".join(str(x) for x in e.expected)
-            print "Here:", tokens[e.position:], ">>>", tokens[e.position], "<<<", tokens[e.position + 1]
+            raise Exception(
+                "Expected " + " or ".join(str(x) for x in e.expected),
+                "Here: " + str(tokens[e.position - 10:e.position]) + " >>> " + str(tokens[e.position]) + " <<< " + str(tokens[e.position + 1:e.position + 10])
+            )
