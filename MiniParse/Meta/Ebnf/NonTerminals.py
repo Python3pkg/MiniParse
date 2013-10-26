@@ -23,14 +23,12 @@ class Syntax(_deepComparable):
     def __init__(self, rules):
         self.__rules = rules
 
-    def generateMiniParser(self):
+    def generateMiniParser(self, computeParserName, computeMatchName):
         return (
             "from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser\n"
             + "\n"
-            + "import Syntax\n"
             + "\n"
-            + "\n"
-            + "".join(rule.generate() for rule in self.__rules)
+            + "".join(rule.generate(computeParserName, computeMatchName) for rule in self.__rules)
         )
 
 
@@ -39,15 +37,17 @@ class SyntaxRule(_deepComparable):
         self.__name = name
         self.__definition = definition
 
-    def generate(self):
-        if isinstance(self.__definition, (Terminal, NonTerminal)):
-            return self.__name + "Parser = " + self.__definition.generate() + "\n"
+    def generate(self, computeParserName, computeMatchName):
+        parserName = computeParserName(self.__name)
+        matchName = computeMatchName(self.__name)
+        if isinstance(self.__definition, (Terminal, NonTerminal)):  # @todo Use a virtual method...
+            return parserName + " = " + self.__definition.generate() + "\n"
         else:
             return (
-                "class " + self.__name + "Parser:\n"
+                "class " + parserName + ":\n"
                 + "    @staticmethod\n"
                 + "    def apply(cursor):\n"
-                + "        return " + self.__definition.generate(", Syntax." + self.__name) + ".apply(cursor)\n"
+                + "        return " + self.__definition.generate(", " + matchName) + ".apply(cursor)\n"
                 + "\n"
                 + "\n"
             )
