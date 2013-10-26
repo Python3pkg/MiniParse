@@ -79,7 +79,11 @@ function push {
 }
 
 function run2to3 {
-    2to3 --write --nobackups AnotherPyGraphvizAgain
+    2to3 --write --nobackups MiniParse
+}
+
+function generate {
+    python -m MiniParse.Meta --in MiniParse/Examples/StringArithmetic/Grammar.ebnf generate --out MiniParse/Examples/StringArithmetic/Parser.py --import ParsingUtilities --match-name-lambda 'lambda n: "ParsingUtilities.make" + n'
 }
 
 $1
