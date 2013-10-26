@@ -18,8 +18,7 @@ import sys
 import pipes  # For pipes.quote: see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split
 import InteractiveCommandLine as ICL
 
-import Ebnf.Lexer
-import Ebnf.Parser
+import HandWrittenEbnf
 
 
 class Generate(ICL.Command):
@@ -55,9 +54,8 @@ class Program(ICL.Program):
         self.addCommand(Generate(self))
 
     def __parseGrammarFile(self, input):
-        l = Ebnf.Lexer.Lexer()
-        p = Ebnf.Parser.Parser()
-        return (input, p(l(open(input).read())))
+        with open(input) as f:
+            return (input, HandWrittenEbnf.parse(f.read()))
 
 
 Program().execute()

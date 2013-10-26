@@ -16,11 +16,11 @@
 import os
 import unittest
 
-import MiniParse.Meta.Ebnf.Tokens as Tok
-from MiniParse.Meta.Ebnf.Lexer import Lexer
+import MiniParse.Meta.HandWrittenEbnf.Tokens as Tok
+from MiniParse.Meta.HandWrittenEbnf.Lexer import Lexer
 
 
-class LexerTestCase(unittest.TestCase):
+class HandWrittenEbnfLexerTestCase(unittest.TestCase):
     def setUp(self):
         self.lexer = Lexer()
 
@@ -88,7 +88,3 @@ class LexerTestCase(unittest.TestCase):
     def testUnclosedComment(self):
         with self.assertRaises(Exception):
             self.lexer("abcd = efgh; (* ijkl")
-
-    def testEbnfSyntax(self):
-        # This just checks no exception is raised
-        self.lexer(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read())

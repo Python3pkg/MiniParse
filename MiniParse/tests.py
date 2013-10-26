@@ -16,7 +16,7 @@
 import unittest
 
 from Core.tests import *
-from Meta.tests import *
+from Meta.HandWrittenEbnf.tests import *
 from Examples.StringArithmetic.tests import *
 
 if __name__ == "__main__":  # pragma no branch (Main)

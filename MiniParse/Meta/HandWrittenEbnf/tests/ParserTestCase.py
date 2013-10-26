@@ -16,19 +16,14 @@
 import os
 import unittest
 
-import MiniParse.Meta.Ebnf.Tokens as Tok
-from MiniParse.Meta.Ebnf.Lexer import Lexer
-from MiniParse.Meta.Ebnf.Parser import Parser
-from MiniParse.Meta.Ebnf.NonTerminals import *
+import MiniParse.Meta.HandWrittenEbnf.Tokens as Tok
+import MiniParse.Meta.HandWrittenEbnf
+from MiniParse.Meta.Syntax import *
 
 
-class ParserTestCase(unittest.TestCase):
-    def setUp(self):
-        self.lexer = Lexer()
-        self.parser = Parser()
-
+class HandWrittenEbnfParserTestCase(unittest.TestCase):
     def parse(self, input, output):
-        self.assertEqual(self.parser(self.lexer(input)), output)
+        self.assertEqual(MiniParse.Meta.HandWrittenEbnf.parse(input), output)
 
     def testTerminal(self):
         self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", Terminal("bar"))]))
@@ -99,7 +94,3 @@ class ParserTestCase(unittest.TestCase):
                 )
             ])
         )
-
-    def testEbnfSyntax(self):
-        # Check that no exception is raised
-        self.parser(self.lexer(open(os.path.join(os.path.dirname(__file__), "..", "Ebnf", "ebnf.ebnf")).read()))

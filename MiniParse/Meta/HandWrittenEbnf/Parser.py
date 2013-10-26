@@ -13,11 +13,10 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import MiniParse
 from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser
 
 import Tokens as Tok
-from NonTerminals import *
+from MiniParse.Meta.Syntax import *
 
 
 class ClassParser:
@@ -167,12 +166,3 @@ class Parser:
 
     # 4.2
     syntax = RepeatedParser(syntaxRule, Syntax)
-
-    def __call__(self, tokens):
-        try:
-            return MiniParse.parse(self.syntax, tokens)
-        except MiniParse.SyntaxError, e:
-            raise Exception(
-                "Expected " + " or ".join(str(x) for x in e.expected),
-                "Here: " + str(tokens[e.position - 10:e.position]) + " >>> " + str(tokens[e.position]) + " <<< " + str(tokens[e.position + 1:e.position + 10])
-            )

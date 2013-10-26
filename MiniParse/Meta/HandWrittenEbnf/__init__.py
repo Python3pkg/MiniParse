@@ -13,5 +13,16 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from EbnfLexer import *
-from EbnfParser import *
+import MiniParse
+import Lexer
+import Parser
+
+
+def parse(s):
+    try:
+        return MiniParse.parse(Parser.Parser.syntax, Lexer.Lexer()(s))
+    except MiniParse.SyntaxError, e:
+        raise Exception(
+            "Expected " + " or ".join(str(x) for x in e.expected),
+            "Here: " + str(tokens[e.position - 10:e.position]) + " >>> " + str(tokens[e.position]) + " <<< " + str(tokens[e.position + 1:e.position + 10])
+        )
