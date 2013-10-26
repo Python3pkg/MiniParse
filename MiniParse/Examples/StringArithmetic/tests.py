@@ -16,17 +16,17 @@
 import unittest
 
 import MiniParse
-import Grammar
+import Parser
 
 
 class StringArithmeticTestCase(unittest.TestCase):
     def parseAndDump(self, input, expectedOutput):
-        actualOutput = MiniParse.parse(Grammar.StringExprParser, input).dump()
+        actualOutput = MiniParse.parse(Parser.StringExprParser, input).dump()
         self.assertEqual(actualOutput, expectedOutput)
 
     def expectSyntaxError(self, input, expectedPosition, expectedExpected):
         with self.assertRaises(MiniParse.SyntaxError) as cm:
-            actualOutput = MiniParse.parse(Grammar.StringExprParser, input)
+            actualOutput = MiniParse.parse(Parser.StringExprParser, input)
         exception = cm.exception
         actualPosition, actualExpected = exception.args
         self.assertEqual(actualPosition, expectedPosition)

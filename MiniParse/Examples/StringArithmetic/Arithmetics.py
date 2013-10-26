@@ -15,19 +15,15 @@
 
 
 class StringExpr:
-    def __init__(self, term, terms):
-        self.terms = [term] + [t for (plus, t) in terms]
+    def __init__(self, terms):
+        self.terms = terms
 
     def dump(self):
         return "".join(t.dump() for t in self.terms)
 
 
-def StringTerm(term):
-    return term
-
-
-class RepeatedStringFactor:
-    def __init__(self, rep, times, factor):
+class StringTerm:
+    def __init__(self, rep, factor):
         self.rep = rep
         self.factor = factor
 
@@ -35,15 +31,9 @@ class RepeatedStringFactor:
         return self.rep.compute() * self.factor.dump()
 
 
-def StringFactor(factor):
-    if not isinstance(factor, String):
-        leftPar, factor, rightPar = factor
-    return factor
-
-
 class IntTerm:
-    def __init__(self, factor, factors):
-        self.factors = [(1, factor)] + [(1 if op == "*" else -1, fa) for (op, fa) in factors]
+    def __init__(self, factors):
+        self.factors = factors
 
     def compute(self):
         v = 1
@@ -55,15 +45,9 @@ class IntTerm:
         return v
 
 
-def IntFactor(factor):
-    if not isinstance(factor, Int):
-        leftPar, factor, rightPar = factor
-    return factor
-
-
 class IntExpr:
-    def __init__(self, term, terms):
-        self.terms = [(1, term)] + [(1 if op == "+" else -1, te) for (op, te) in terms]
+    def __init__(self, terms):
+        self.terms = terms
 
     def compute(self):
         v = 0
@@ -76,26 +60,16 @@ class IntExpr:
 
 
 class Int:
-    def __init__(self, sign, digit, digits):
-        sign = 1 if sign is None else -1
-        digits = [digit] + digits
-        self.value = sign * int("".join(digits))
+    def __init__(self, value):
+        self.value = value
 
     def compute(self):
         return self.value
 
 
-def Digit(value):
-    return value
-
-
 class String:
-    def __init__(self, openingQuote, chars, closingQuote):
-        self.value = "".join(chars)
+    def __init__(self, value):
+        self.value = value
 
     def dump(self):
         return self.value
-
-
-def Char(value):
-    return value

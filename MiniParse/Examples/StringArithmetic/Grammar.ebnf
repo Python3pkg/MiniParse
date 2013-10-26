@@ -14,13 +14,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 *)
 
 StringExpr = StringTerm, { '+', StringTerm };
-StringTerm = RepeatedStringFactor | StringFactor;
-RepeatedStringFactor = IntTerm, '*', StringFactor;
+StringTerm = [IntTerm, '*'], StringFactor;
 StringFactor = String | '(', StringExpr, ')';
+String = '"', { Char }, '"';
+Char = 'a' | 'b' | 'c' | 'd' | 'e' | 'f';
+
 IntTerm = IntFactor, { ( '*' | '/' ), IntFactor };
 IntFactor = Int | '(', IntExpr, ')';
 IntExpr = IntTerm, { ( '+' | '-' ) , IntTerm };
 Int = [ '-' ], Digit, { Digit };
 Digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
-String = '"', { Char }, '"';
-Char = 'a' | 'b' | 'c' | 'd' | 'e' | 'f';
