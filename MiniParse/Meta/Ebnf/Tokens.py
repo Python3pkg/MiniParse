@@ -51,14 +51,14 @@ class Comment:
 
 
 class MetaIdentifier:
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, words):
+        self.value = " ".join(words)
 
     def __eq__(self, other):
         return other.__class__ == MetaIdentifier and other.value == self.value
 
     def __repr__(self):
-        return "MetaIdentifier(" + " ".join(self.value) + ")"
+        return "MetaIdentifier(" + self.value + ")"
 
 
 class Integer:
