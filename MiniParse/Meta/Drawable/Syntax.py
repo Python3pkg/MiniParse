@@ -13,11 +13,36 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
+import collections
+import math
 
-from Core.tests import *
-from Meta.tests import *
-from Examples.StringArithmetic.tests import *
 
-if __name__ == "__main__":  # pragma no branch (Main)
-    unittest.main()  # pragma no cover (Main)
+class Syntax:
+    def __init__(self, rules):
+        self.rules = rules
+
+    def getExtents(self, ctx):
+        width = 0
+        height = 0
+
+        for rule in self.rules:
+            w, h = rule.getExtents(ctx)
+            width = max(w, width)
+            height += 10 + h
+        height -= 10
+
+        return width, height
+
+    def draw(self, ctx):
+        for rule in self.rules:
+            w, h = rule.getExtents(ctx)
+            rule.draw(ctx)
+
+            # Debug
+            ctx.save()
+            ctx.rectangle(0, 0, w, h)
+            ctx.set_source_rgba(0, 0, 1, 0.2)
+            ctx.fill()
+            ctx.restore()
+
+            ctx.translate(0, h + 10)

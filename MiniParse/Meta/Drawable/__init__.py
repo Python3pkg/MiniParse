@@ -13,11 +13,9 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-
-from Core.tests import *
-from Meta.tests import *
-from Examples.StringArithmetic.tests import *
-
-if __name__ == "__main__":  # pragma no branch (Main)
-    unittest.main()  # pragma no cover (Main)
+from Syntax import Syntax
+from Rule import Rule
+from Alternative import Alternative
+from Sequence import Sequence
+from Repetition import Repetition
+from AtomicNodes import Terminal, NonTerminal
