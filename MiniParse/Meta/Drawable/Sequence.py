@@ -21,21 +21,20 @@ class Sequence:
     def __init__(self, nodes):
         self.nodes = nodes
 
-    def getExtents(self, ctx):
+    def getExtents(self, drawer):
         right = 0
         up = 0
         down = 0
         for node in self.nodes:
-            r, u, d = node.getExtents(ctx)
+            r, u, d = node.getExtents(drawer)
             right += r
             up = max(up, u)
             down = max(down, d)
         return (right, up, down)
 
-    def draw(self, ctx):
-        ctx.save()
-        for node in self.nodes:
-            r, u, d = node.getExtents(ctx)
-            node.draw(ctx)
-            ctx.translate(r, 0)
-        ctx.restore()
+    def draw(self, drawer):
+        with drawer.save:
+            for node in self.nodes:
+                r, u, d = node.getExtents(drawer)
+                node.draw(drawer)
+                drawer.translateRight(r)

@@ -18,6 +18,8 @@ import math
 
 
 class Rule(object):
+    labelFontSize = 1.3
+
     def __init__(self, name, node):
         self.name = name
         self.node = node
@@ -26,56 +28,24 @@ class Rule(object):
     def label(self):
         return self.name + ":"
 
-    def getExtents(self, ctx):
-        r, u, d = self.node.getExtents(ctx)
-        x_bearing, y_bearing, width, height, x_advance, y_advance = ctx.text_extents(self.label)
-        w = max(50 + 10 + r + 10, x_advance)
-        ascent, descent, height, max_x_advance, max_y_advance = ctx.font_extents()
-        h = height + u + d
-        return w, h
+    def getExtents(self, drawer):
+        r, u, d = self.node.getExtents(drawer)
+        width = max(
+            drawer.startWidth + r + drawer.stopWidth,
+            drawer.getTextWidth(self.label, self.labelFontSize)
+        )
+        height = drawer.getFontHeight(self.labelFontSize) + u + d
+        return width, height
 
-    def draw(self, ctx):
-        ctx.save()
+    def draw(self, drawer):
+        with drawer.save:
+            drawer.drawText(self.label, self.labelFontSize)
+            drawer.translateDown(drawer.getFontHeight(self.labelFontSize))
 
-        x_bearing, y_bearing, width, height, x_advance, y_advance = ctx.text_extents(self.label)
-        ascent, descent, height, max_x_advance, max_y_advance = ctx.font_extents()
-        ctx.translate(0, ascent)
-        ctx.show_text(self.label)
-
-        # Debug
-        ctx.save()
-        ctx.rectangle(0, -ascent, width, height)
-        ctx.set_source_rgba(1, 0, 0, 0.2)
-        ctx.fill()
-        ctx.restore()
-
-        r, u, d = self.node.getExtents(ctx)
-        ctx.translate(50, descent + u)
-
-        # Start circle
-        ctx.arc(3, 0, 3, 0, 2 * math.pi)
-        ctx.fill()
-        # Start line
-        ctx.line_to(6, 0)
-        ctx.line_to(10, 0)
-        ctx.stroke()
-
-        # Node
-        ctx.translate(10, 0)
-        self.node.draw(ctx)
-
-        # Debug
-        ctx.save()
-        ctx.rectangle(0, -u, r, u + d)
-        ctx.set_source_rgba(1, 0, 0, 0.2)
-        ctx.fill()
-        ctx.restore()
-
-        # Stop circle
-        ctx.translate(r, 0)
-        ctx.arc(5, 0, 3, 0, 2 * math.pi)
-        ctx.fill()
-        ctx.arc(5, 0, 5, 0, 2 * math.pi)
-        ctx.stroke()
-
-        ctx.restore()
+            r, u, d = self.node.getExtents(drawer)
+            drawer.translateDown(u)
+            drawer.drawStart()
+            drawer.translateRight(drawer.startWidth)
+            self.node.draw(drawer)
+            drawer.translateRight(r)
+            drawer.drawStop()

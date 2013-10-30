@@ -16,17 +16,21 @@
 import collections
 import math
 
+from Drawer import Drawer
+
 
 class Syntax:
     def __init__(self, rules):
         self.rules = rules
 
     def getExtents(self, ctx):
+        drawer = Drawer(ctx)
+
         width = 0
         height = 0
 
         for rule in self.rules:
-            w, h = rule.getExtents(ctx)
+            w, h = rule.getExtents(drawer)
             width = max(w, width)
             height += 10 + h
         height -= 10
@@ -34,15 +38,9 @@ class Syntax:
         return width, height
 
     def draw(self, ctx):
+        drawer = Drawer(ctx)
+
         for rule in self.rules:
-            w, h = rule.getExtents(ctx)
-            rule.draw(ctx)
-
-            # Debug
-            ctx.save()
-            ctx.rectangle(0, 0, w, h)
-            ctx.set_source_rgba(0, 0, 1, 0.2)
-            ctx.fill()
-            ctx.restore()
-
-            ctx.translate(0, h + 10)
+            w, h = rule.getExtents(drawer)
+            rule.draw(drawer)
+            drawer.translateDown(h + 10)

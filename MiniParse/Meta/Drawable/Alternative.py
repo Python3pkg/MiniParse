@@ -19,7 +19,6 @@ import math
 
 class Alternative:
     verticalSpace = 10
-    radius = 5
 
     def __init__(self, nodes):
         self.nodes = nodes
@@ -27,80 +26,77 @@ class Alternative:
         self.maxNodeDxRight = 0
         self.totalHeight = 0
 
-    def getExtents(self, ctx):
-        self.computeExtents(ctx)
+    def getExtents(self, drawer):
+        self.computeExtents(drawer)
 
         return (
-            4 * self.radius + self.maxNodeDxRight,
+            4 * drawer.arcRadius + self.maxNodeDxRight,
             self.extents[0][1],
             self.totalHeight - self.extents[0][1]
         )
 
-    def computeExtents(self, ctx):
+    def computeExtents(self, drawer):
         self.extents = []
         self.maxNodeDxRight = 0
         self.totalHeight = self.verticalSpace * (len(self.nodes) - 1)
 
         for node in self.nodes:
-            r, u, d = node.getExtents(ctx)
+            r, u, d = node.getExtents(drawer)
             self.extents.append((r, u, d))
             self.maxNodeDxRight = max(self.maxNodeDxRight, r)
             self.totalHeight += u + d
 
-    def draw(self, ctx):
-        ctx.save()
-        self.computeExtents(ctx)
+    def draw(self, drawer):
+        with drawer.save:
+            self.computeExtents(drawer)
 
-        verticalLineHeight = self.totalHeight - self.extents[0][1] - self.extents[-1][2] - 2 * self.radius
+            verticalLineHeight = self.totalHeight - self.extents[0][1] - self.extents[-1][2] - 2 * drawer.arcRadius
 
-        # Left horizontal line
-        ctx.move_to(0, 0)
-        ctx.rel_line_to(2 * self.radius, 0)
-        # Top-left circle arc
-        ctx.move_to(0, 0)
-        ctx.arc(0, self.radius, self.radius, 3*math.pi/2, 2*math.pi)
-        # Left vertical line
-        ctx.move_to(self.radius, self.radius)
-        ctx.rel_line_to(0, verticalLineHeight)
-        # Right horizontal line
-        ctx.move_to(self.maxNodeDxRight + 2 * self.radius, 0)
-        ctx.rel_line_to(2 * self.radius, 0)
-        # Top-right circle arc
-        ctx.move_to(self.maxNodeDxRight + 4 * self.radius, 0)
-        ctx.arc_negative(self.maxNodeDxRight + 4 * self.radius, self.radius, self.radius, 3*math.pi/2, math.pi)
-        # Right vertical line
-        ctx.move_to(self.maxNodeDxRight + 3 * self.radius, self.radius)
-        ctx.rel_line_to(0, verticalLineHeight)
-        ctx.stroke()
+            drawer.drawSegment()
+            drawer.drawArcRight()
+            with drawer.save:
+                drawer.translateRight(drawer.arcRadius)
+                drawer.translateDown(drawer.arcRadius)
+                drawer.rotateRight()
+                drawer.drawLine(verticalLineHeight)
 
-        ctx.translate(2 * self.radius, 0)
+            drawer.translateRight(drawer.arcRadius)
 
-        ctx.save()
-        self.drawNode(ctx, 0)
-        for i in range(len(self.nodes) - 1):
-            ctx.translate(0, self.extents[i][2] + self.verticalSpace + self.extents[i][1])
-            # Left circle arc
-            ctx.move_to(0, 0)
-            ctx.arc(0, -self.radius, self.radius, math.pi/2, math.pi)
-            # Right circle arc
-            ctx.move_to(self.maxNodeDxRight, 0)
-            ctx.arc_negative(self.maxNodeDxRight, -self.radius, self.radius, math.pi/2, 0)
-            ctx.stroke()
-            self.drawNode(ctx, i + 1)
-        ctx.restore()
+            with drawer.save:
+                with drawer.save:
+                    drawer.translateRight(drawer.arcRadius)
+                    self.drawNode(drawer, 0)
+                for i in range(len(self.nodes) - 1):
+                    drawer.translateDown(self.extents[i][2] + self.verticalSpace + self.extents[i + 1][1])
+                    with drawer.save:
+                        drawer.translateUp(drawer.arcRadius)
+                        drawer.rotateRight()
+                        drawer.drawArcLeft()
+                    with drawer.save:
+                        drawer.translateRight(drawer.arcRadius)
+                        self.drawNode(drawer, i + 1)
+                        drawer.translateRight(self.maxNodeDxRight)
+                        drawer.drawArcLeft()
 
-        ctx.restore()
+            drawer.translateRight(self.maxNodeDxRight + drawer.arcRadius)
+            drawer.drawSegment()
+            with drawer.save:
+                drawer.translateRight(drawer.arcRadius)
+                drawer.translateDown(drawer.arcRadius)
+                drawer.rotateLeft()
+                drawer.drawArcRight()
+            with drawer.save:
+                drawer.translateRight(drawer.arcRadius)
+                drawer.translateDown(drawer.arcRadius)
+                drawer.rotateRight()
+                drawer.drawLine(verticalLineHeight)
 
-    def drawNode(self, ctx, i):
-        dx = (self.maxNodeDxRight - self.extents[i][0]) / 2
+    def drawNode(self, drawer, i):
+        with drawer.save:
+            dx = (self.maxNodeDxRight - self.extents[i][0]) / 2
 
-        ctx.move_to(0, 0)
-        ctx.line_to(dx, 0)
-        ctx.move_to(dx + self.extents[i][0], 0)
-        ctx.line_to(self.maxNodeDxRight, 0)
-        ctx.stroke()
-
-        ctx.save()
-        ctx.translate(dx, 0)
-        self.nodes[i].draw(ctx)
-        ctx.restore()
+            drawer.drawLine(dx)
+            drawer.translateRight(dx)
+            self.nodes[i].draw(drawer)
+            drawer.translateRight(self.extents[i][0])
+            drawer.drawLine(dx)

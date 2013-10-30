@@ -25,11 +25,10 @@ class DrawableTestCase(unittest.TestCase):
         s = Syntax(self.rules)
         img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
         ctx = cairo.Context(img)
-        ctx.set_font_size(15)
         w, h = s.getExtents(ctx)
-        img = cairo.ImageSurface(cairo.FORMAT_RGB24, int(w) + 10, int(h) + 10)
+        img = cairo.ImageSurface(cairo.FORMAT_RGB24, 3 * (int(w) + 10), 3 * (int(h) + 10))
         ctx = cairo.Context(img)
-        ctx.set_font_size(15)
+        ctx.scale(3, 3)
         ctx.set_source_rgb(0.8, 0.8, 0.8)
         ctx.paint()
         ctx.set_source_rgb(1, 1, 1)
@@ -65,7 +64,7 @@ class DrawableTestCase(unittest.TestCase):
 
     def testLongRuleName(self):
         self.rules = [
-            Rule("this long rule name should not be truncated", NonTerminal("foo 1")),
+            Rule("this long rule name should not be truncated", NonTerminal("foo")),
         ]
 
     def testAlternative(self):
