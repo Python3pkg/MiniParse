@@ -18,9 +18,6 @@ import math
 
 
 class Repetition:
-    radius = 5
-    verticalSpace = 10
-
     def __init__(self, forward, backward):
         self.forward = forward
         self.backward = backward
@@ -30,57 +27,31 @@ class Repetition:
         backwardRight, backwardUp, backwardDown = self.backward.getExtents(drawer)
 
         return (
-            max(forwardRight, backwardRight) + 4 * self.radius,
+            max(forwardRight, backwardRight) + 2 * drawer.baseLength,
             forwardUp,
-            forwardDown + self.verticalSpace + backwardUp + backwardDown
+            forwardDown + drawer.baseLength + backwardUp + backwardDown
         )
 
     def draw(self, drawer):
-        drawer.ctx.save()
         forwardRight, forwardUp, forwardDown = self.forward.getExtents(drawer)
         backwardRight, backwardUp, backwardDown = self.backward.getExtents(drawer)
 
         maxNodeDxRight = max(forwardRight, backwardRight)
 
-        # Top-left horizontal line
-        drawer.ctx.move_to(0, 0)
-        drawer.ctx.line_to(2 * self.radius + (maxNodeDxRight - forwardRight) / 2, 0)
-        drawer.ctx.stroke()
+        turnLeft, turnRight = drawer.getTurns()
 
-        # Forward
-        drawer.ctx.save()
-        drawer.ctx.translate(2 * self.radius + (maxNodeDxRight - forwardRight) / 2, 0)
+        drawer.advance()
+        drawer.advance((maxNodeDxRight - forwardRight) / 2)
         self.forward.draw(drawer)
-        drawer.ctx.restore()
-
-        # Top-right horizontal line
-        drawer.ctx.move_to(2 * self.radius + (maxNodeDxRight + forwardRight) / 2, 0)
-        drawer.ctx.line_to(maxNodeDxRight + 4 * self.radius, 0)
-        drawer.ctx.stroke()
-
-        # Right half-circle
-        drawer.ctx.move_to(2 * self.radius + maxNodeDxRight, 0)
-        drawer.ctx.arc(2 * self.radius + maxNodeDxRight, self.radius, self.radius, 3 * math.pi / 2, 2 * math.pi)
-        drawer.ctx.line_to(3 * self.radius + maxNodeDxRight, forwardDown + self.verticalSpace + backwardUp - self.radius)
-        drawer.ctx.arc(2 * self.radius + maxNodeDxRight, forwardDown + self.verticalSpace + backwardUp - self.radius, self.radius, 0, math.pi / 2)
-        # Bottom-right horizontal line
-        drawer.ctx.line_to(2 * self.radius + (maxNodeDxRight + backwardRight) / 2, forwardDown + self.verticalSpace + backwardUp)
-        drawer.ctx.stroke()
-
-        # Backward
-        drawer.ctx.save()
-        drawer.ctx.translate(2 * self.radius + (maxNodeDxRight + backwardRight) / 2, forwardDown + self.verticalSpace + backwardUp)
-        drawer.ctx.scale(-1, 1)
-        self.backward.draw(drawer)
-        drawer.ctx.restore()
-
-        # Bottom-left horizontal line
-        drawer.ctx.move_to(2 * self.radius + (maxNodeDxRight - backwardRight) / 2, forwardDown + self.verticalSpace + backwardUp)
-        drawer.ctx.line_to(2 * self.radius, forwardDown + self.verticalSpace + backwardUp)
-        # Left half-circle
-        drawer.ctx.arc(2 * self.radius, forwardDown + self.verticalSpace + backwardUp - self.radius, self.radius, math.pi / 2, math.pi)
-        drawer.ctx.line_to(self.radius, self.radius)
-        drawer.ctx.arc(2 * self.radius, self.radius, self.radius, math.pi, 3 * math.pi / 2)
-        drawer.ctx.stroke()
-
-        drawer.ctx.restore()
+        drawer.advance((maxNodeDxRight - forwardRight) / 2)
+        with drawer.branch:
+            turnRight()
+            drawer.advance(forwardDown + backwardUp)
+            turnRight()
+            drawer.advance((maxNodeDxRight - backwardRight) / 2)
+            self.backward.draw(drawer)
+            drawer.advance((maxNodeDxRight - backwardRight) / 2)
+            turnRight()
+            drawer.advance(forwardDown + backwardUp)
+            turnRight()
+        drawer.advance()

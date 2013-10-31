@@ -17,54 +17,33 @@ import collections
 import math
 
 
-class _AtomicValuedNode:
-    verticalMargin = 10
-    horizontalMargin = 10
+class NonTerminal:
     fontSize = 1
 
     def __init__(self, value):
         self.value = value
 
     def getExtents(self, drawer):
-        height = drawer.getFontHeight(self.fontSize) + self.verticalMargin
-        return (
-            drawer.arrowLength + drawer.getTextWidth(self.value, self.fontSize) + self.horizontalMargin + drawer.segmentLength,
-            height / 2,
-            height / 2
-        )
+        r, u, d = drawer.getTextInRectangleExtents(self.value, self.fontSize)
+        return 2 * drawer.baseLength + r, u, d
 
     def draw(self, drawer):
-        textWidth = drawer.getTextWidth(self.value, self.fontSize)
-        with drawer.save:
-            drawer.drawArrow()
-
-            drawer.translateRight(drawer.arrowLength)
-
-            with drawer.save:
-                drawer.translateRight(self.horizontalMargin / 2)
-                drawer.drawTextVerticallyCentered(self.value, self.fontSize)
-
-            width = textWidth + self.horizontalMargin
-            height = drawer.getFontHeight(self.fontSize) + self.verticalMargin
-            with drawer.save:
-                drawer.translateDown(-height / 2)
-                self.drawSurroundingShape(drawer, width, height)
-
-            drawer.translateRight(textWidth + self.horizontalMargin)
-            drawer.drawSegment()
+        drawer.advanceWithArrow()
+        drawer.drawTextInRectangle(self.value, self.fontSize)
+        drawer.advance()
 
 
-class NonTerminal(_AtomicValuedNode):
-    def drawSurroundingShape(self, drawer, width, height):
-        drawer.ctx.rectangle(0, 0, width, height)
-        drawer.ctx.stroke()
+class Terminal:
+    fontSize = 1
 
+    def __init__(self, value):
+        self.value = value
 
-class Terminal(_AtomicValuedNode):
-    def drawSurroundingShape(self, drawer, width, height):
-        drawer.ctx.move_to(height / 2, 0)
-        drawer.ctx.line_to(width - height / 2, 0)
-        drawer.ctx.arc(width - height / 2, height / 2, height / 2, -math.pi / 2, math.pi / 2)
-        drawer.ctx.line_to(height / 2, height)
-        drawer.ctx.arc(height / 2, height / 2, height / 2, math.pi / 2, -math.pi / 2)
-        drawer.ctx.stroke()
+    def getExtents(self, drawer):
+        r, u, d = drawer.getTextInRoundedRectangleExtents(self.value, self.fontSize)
+        return 2 * drawer.baseLength + r, u, d
+
+    def draw(self, drawer):
+        drawer.advanceWithArrow()
+        drawer.drawTextInRoundedRectangle(self.value, self.fontSize)
+        drawer.advance()

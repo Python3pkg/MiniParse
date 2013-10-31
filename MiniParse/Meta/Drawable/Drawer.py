@@ -18,29 +18,13 @@ import math
 
 
 class Drawer(object):
+    baseLength = 10
+
     def __init__(self, ctx):
         self.ctx = ctx
 
-    def translateDown(self, d):
-        self.ctx.translate(0, d)
-
-    def translateUp(self, d):
-        self.ctx.translate(0, -d)
-
-    def translateRight(self, d):
-        self.ctx.translate(d, 0)
-
-    def translateLeft(self, d):
-        self.ctx.translate(-d, 0)
-
-    def rotateLeft(self):
-        self.ctx.rotate(-math.pi / 2)
-
-    def rotateRight(self):
-        self.ctx.rotate(math.pi / 2)
-
     @property
-    def save(self):
+    def __save(self):
         class Restorer:
             def __init__(self, ctx):
                 self.ctx = ctx
@@ -53,99 +37,125 @@ class Drawer(object):
 
         return Restorer(self.ctx)
 
-    segmentLength = 10
+    @property
+    def branch(self):
+        class Restorer:
+            def __init__(self, ctx):
+                self.ctx = ctx
 
-    def drawSegment(self):
-        with self.save:
-            self.ctx.set_source_rgb(0, 1, 0)
-            self.ctx.move_to(0, 0)
-            self.ctx.rel_line_to(self.segmentLength, 0)
-            self.ctx.stroke()
+            def __enter__(self):
+                self.ctx.save()
 
-    arrowLength = segmentLength
+            def __exit__(self, type, exception, stacktrace):
+                self.ctx.restore()
+                self.ctx.move_to(0, 0)
 
-    def drawArrow(self):
-        with self.save:
-            self.ctx.set_source_rgb(1, 0, 1)
-            self.ctx.move_to(0, 0)
-            self.ctx.rel_line_to(self.arrowLength, 0)
-            self.ctx.stroke()
-            self.ctx.move_to(5, -4)
-            self.ctx.line_to(10, 0)
-            self.ctx.line_to(5, 4)
-            self.ctx.fill()
+        return Restorer(self.ctx)
 
-    arcRadius = segmentLength / 2
+    def advance(self, d=baseLength):
+        self.ctx.move_to(0, 0)
+        self.ctx.rel_line_to(d, 0)
+        self.ctx.stroke()
+        self.ctx.translate(d, 0)
 
-    def drawArcRight(self):
-        with self.save:
-            self.ctx.set_source_rgb(0, 0, 1)
-            self.ctx.move_to(0, 0)
-            self.ctx.arc(0, self.arcRadius, self.arcRadius, 3 * math.pi / 2, 2 * math.pi)
-            self.ctx.stroke()
+    def advanceWithArrow(self):
+        self.ctx.move_to(0, 0)
+        self.ctx.rel_line_to(self.baseLength - 5, 0)
+        self.ctx.stroke()
+        self.ctx.move_to(self.baseLength - 5.5, -4)
+        self.ctx.line_to(self.baseLength - 0.5, 0)
+        self.ctx.line_to(self.baseLength - 5.5, 4)
+        self.ctx.fill()
+        self.ctx.translate(self.baseLength, 0)
 
-    def drawArcLeft(self):
-        with self.save:
-            self.ctx.set_source_rgb(0, 0, 1)
-            self.ctx.move_to(0, 0)
-            self.ctx.arc_negative(0, -self.arcRadius, self.arcRadius, math.pi / 2, 0)
-            self.ctx.stroke()
+    def __turnRight(self):
+        self.ctx.move_to(0, 0)
+        self.ctx.arc(0, self.baseLength / 2, self.baseLength / 2, 3 * math.pi / 2, 2 * math.pi)
+        self.ctx.stroke()
+        self.ctx.translate(self.baseLength / 2, self.baseLength / 2)
+        self.ctx.rotate(math.pi / 2)
 
-    startWidth = segmentLength
+    def __turnLeft(self):
+        self.ctx.move_to(0, 0)
+        self.ctx.arc_negative(0, -self.baseLength / 2, self.baseLength / 2, math.pi / 2, 0)
+        self.ctx.stroke()
+        self.ctx.translate(self.baseLength / 2, -self.baseLength / 2)
+        self.ctx.rotate(-math.pi / 2)
 
     def drawStart(self):
-        with self.save:
-            self.ctx.set_source_rgb(1, 0, 0)
-            self.ctx.move_to(0, 0)
-            self.ctx.arc(3, 0, 3, 0, 2 * math.pi)
-            self.ctx.fill()
-            self.ctx.move_to(0, 0)
-            self.ctx.line_to(10, 0)
-            self.ctx.stroke()
-
-    stopWidth = segmentLength
+        self.ctx.move_to(0, 0)
+        self.ctx.arc(self.baseLength / 3, 0, self.baseLength / 3, 0, 2 * math.pi)
+        self.ctx.fill()
+        self.ctx.move_to(0, 0)
+        self.ctx.line_to(self.baseLength, 0)
+        self.ctx.stroke()
+        self.ctx.translate(self.baseLength, 0)
 
     def drawStop(self):
-        with self.save:
-            self.ctx.set_source_rgb(0, 0, 1)
-            self.ctx.arc(5, 0, 3, 0, 2 * math.pi)
-            self.ctx.fill()
-            self.ctx.arc(5, 0, 5, 0, 2 * math.pi)
-            self.ctx.stroke()
+        self.ctx.arc(self.baseLength / 2, 0, self.baseLength / 3, 0, 2 * math.pi)
+        self.ctx.fill()
+        self.ctx.arc(self.baseLength / 2, 0, self.baseLength / 2, 0, 2 * math.pi)
+        self.ctx.stroke()
+        self.ctx.translate(self.baseLength, 0)
 
-    def drawLine(self, length):
-        with self.save:
-            self.ctx.set_source_rgb(0, 1, 1)
-            self.ctx.move_to(0, 0)
-            self.ctx.line_to(length, 0)
-            self.ctx.stroke()
-
-    def getFontHeight(self, size):
-        with self.save:
-            self.ctx.set_font_size(size * 10.)
-            ascent, descent, height, max_x_advance, max_y_advance = self.ctx.font_extents()
-            return height
-
-    def getTextWidth(self, text, size):
-        with self.save:
+    def getTextExtents(self, text, size):
+        with self.__save:
             self.ctx.set_font_size(size * 10.)
             x_bearing, y_bearing, width, height, x_advance, y_advance = self.ctx.text_extents(text)
-            return width
+            w = x_advance
+            ascent, descent, height, max_x_advance, max_y_advance = self.ctx.font_extents()
+            h = height
+        return w, h
 
-    def drawText(self, text, size):
-        with self.save:
+    def getTextInRectangleExtents(self, text, size):
+        w, h = self.getTextExtents(text, size)
+        w += self.baseLength
+        h += self.baseLength            
+        return w, h / 2, h / 2
+
+    def drawTextInRectangle(self, text, size):
+        r, u, d = self.getTextInRectangleExtents(text, size)
+        self.ctx.rectangle(0, -d, r, u + d)
+        self.ctx.stroke()
+        self.__drawText(self.baseLength / 2, text, size)
+        self.ctx.translate(r, 0)
+
+    def getTextInRoundedRectangleExtents(self, text, size):
+        w, h = self.getTextExtents(text, size)
+        w += 2 * self.baseLength
+        h += self.baseLength
+        return w, h / 2, h / 2
+
+    def drawTextInRoundedRectangle(self, text, size):
+        r, u, d = self.getTextInRoundedRectangleExtents(text, size)
+        self.ctx.arc(self.baseLength, 0, self.baseLength, math.pi / 2, -math.pi / 2)
+        self.ctx.line_to(r - self.baseLength, -self.baseLength)
+        self.ctx.arc(r - self.baseLength, 0, self.baseLength, -math.pi / 2, math.pi / 2)
+        self.ctx.line_to(self.baseLength, self.baseLength)
+        self.ctx.close_path()
+        self.ctx.stroke()
+        self.__drawText(self.baseLength, text, size)
+        self.ctx.translate(r, 0)
+
+    def __drawText(self, x, text, size):
+        w, h = self.getTextExtents(text, size)
+        with self.__save:
+            if self.__isBackward():
+                self.ctx.rotate(math.pi)
+                self.ctx.translate(-w - x, 0)
+            else:
+                self.ctx.translate(x, 0)
             self.ctx.set_font_size(size * 10.)
             ascent, descent, height, max_x_advance, max_y_advance = self.ctx.font_extents()
-            self.translateDown(ascent)
+            self.ctx.move_to(0, (ascent - descent) / 2)
             self.ctx.show_text(text)
 
-    def drawTextVerticallyCentered(self, text, size):
-        with self.save:
-            self.ctx.set_font_size(size * 10.)
-            ascent, descent, height, max_x_advance, max_y_advance = self.ctx.font_extents()
-            self.translateDown((ascent - descent) / 2)
-            xx, yx, xy, yy, x0, y0 = self.ctx.get_matrix()
-            if xx < 0:
-                self.ctx.translate(self.getTextWidth(text, size), 0)
-                self.ctx.scale(-1, 1)
-            self.ctx.show_text(text)
+    def __isBackward(self):
+        xx, yx, xy, yy, x0, y0 = self.ctx.get_matrix()
+        return xx < 0
+
+    def getTurns(self):
+        if self.__isBackward():
+            return self.__turnRight, self.__turnLeft
+        else:
+            return self.__turnLeft, self.__turnRight

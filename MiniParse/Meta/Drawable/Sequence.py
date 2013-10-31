@@ -33,8 +33,5 @@ class Sequence:
         return (right, up, down)
 
     def draw(self, drawer):
-        with drawer.save:
-            for node in self.nodes:
-                r, u, d = node.getExtents(drawer)
-                node.draw(drawer)
-                drawer.translateRight(r)
+        for node in self.nodes:
+            node.draw(drawer)

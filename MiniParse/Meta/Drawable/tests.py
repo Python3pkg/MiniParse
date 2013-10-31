@@ -25,6 +25,7 @@ class DrawableTestCase(unittest.TestCase):
         s = Syntax(self.rules)
         img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
         ctx = cairo.Context(img)
+        ctx.scale(3, 3)
         w, h = s.getExtents(ctx)
         img = cairo.ImageSurface(cairo.FORMAT_RGB24, 3 * (int(w) + 10), 3 * (int(h) + 10))
         ctx = cairo.Context(img)
@@ -96,8 +97,8 @@ class DrawableTestCase(unittest.TestCase):
     def testRepetitionWithLongBackwardBranch(self):
         self.rules = [
             Rule("repetition", Repetition(
-                NonTerminal("forward"),
-                NonTerminal("backward branch is longer")
+                Terminal("forward"),
+                Terminal("backward branch is longer")
             ))
         ]
 
@@ -106,5 +107,17 @@ class DrawableTestCase(unittest.TestCase):
             Rule("repetition", Repetition(
                 Repetition(NonTerminal("forward 1"), NonTerminal("backward 1")),
                 Repetition(NonTerminal("forward 2"), NonTerminal("backward 2"))
+            ))
+        ]
+
+    def testBackwardAlternative(self):
+        self.rules = [
+            Rule("repetition", Repetition(
+                NonTerminal("forward"),
+                Alternative([
+                    NonTerminal("foo"),
+                    NonTerminal("bar"),
+                    NonTerminal("baz")
+                ])
             ))
         ]

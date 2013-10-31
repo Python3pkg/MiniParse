@@ -30,7 +30,7 @@ class Alternative:
         self.computeExtents(drawer)
 
         return (
-            4 * drawer.arcRadius + self.maxNodeDxRight,
+            2 * drawer.baseLength + self.maxNodeDxRight,
             self.extents[0][1],
             self.totalHeight - self.extents[0][1]
         )
@@ -47,56 +47,27 @@ class Alternative:
             self.totalHeight += u + d
 
     def draw(self, drawer):
-        with drawer.save:
-            self.computeExtents(drawer)
+        self.computeExtents(drawer)
 
-            verticalLineHeight = self.totalHeight - self.extents[0][1] - self.extents[-1][2] - 2 * drawer.arcRadius
+        turnLeft, turnRight = drawer.getTurns()
 
-            drawer.drawSegment()
-            drawer.drawArcRight()
-            with drawer.save:
-                drawer.translateRight(drawer.arcRadius)
-                drawer.translateDown(drawer.arcRadius)
-                drawer.rotateRight()
-                drawer.drawLine(verticalLineHeight)
-
-            drawer.translateRight(drawer.arcRadius)
-
-            with drawer.save:
-                with drawer.save:
-                    drawer.translateRight(drawer.arcRadius)
-                    self.drawNode(drawer, 0)
-                for i in range(len(self.nodes) - 1):
-                    drawer.translateDown(self.extents[i][2] + self.verticalSpace + self.extents[i + 1][1])
-                    with drawer.save:
-                        drawer.translateUp(drawer.arcRadius)
-                        drawer.rotateRight()
-                        drawer.drawArcLeft()
-                    with drawer.save:
-                        drawer.translateRight(drawer.arcRadius)
-                        self.drawNode(drawer, i + 1)
-                        drawer.translateRight(self.maxNodeDxRight)
-                        drawer.drawArcLeft()
-
-            drawer.translateRight(self.maxNodeDxRight + drawer.arcRadius)
-            drawer.drawSegment()
-            with drawer.save:
-                drawer.translateRight(drawer.arcRadius)
-                drawer.translateDown(drawer.arcRadius)
-                drawer.rotateLeft()
-                drawer.drawArcRight()
-            with drawer.save:
-                drawer.translateRight(drawer.arcRadius)
-                drawer.translateDown(drawer.arcRadius)
-                drawer.rotateRight()
-                drawer.drawLine(verticalLineHeight)
-
-    def drawNode(self, drawer, i):
-        with drawer.save:
-            dx = (self.maxNodeDxRight - self.extents[i][0]) / 2
-
-            drawer.drawLine(dx)
-            drawer.translateRight(dx)
-            self.nodes[i].draw(drawer)
-            drawer.translateRight(self.extents[i][0])
-            drawer.drawLine(dx)
+        y = self.extents[0][2]
+        for i, node in enumerate(self.nodes[1:]):
+            y += self.extents[i + 1][1]
+            with drawer.branch:
+                turnRight()
+                drawer.advance(y)
+                turnLeft()
+                drawer.advance((self.maxNodeDxRight - self.extents[i + 1][0]) / 2)
+                node.draw(drawer)
+                drawer.advance((self.maxNodeDxRight - self.extents[i + 1][0]) / 2)
+                turnLeft()
+                drawer.advance(y)
+                turnRight()
+            y += self.extents[i + 1][2]
+            y += drawer.baseLength
+        drawer.advance()
+        drawer.advance((self.maxNodeDxRight - self.extents[0][0]) / 2)
+        self.nodes[0].draw(drawer)
+        drawer.advance((self.maxNodeDxRight - self.extents[0][0]) / 2)
+        drawer.advance()
