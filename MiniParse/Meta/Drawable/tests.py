@@ -25,7 +25,7 @@ from MiniParse.Meta.Drawable.Alternative import Alternative
 from MiniParse.Meta.Drawable.NonTerminal import NonTerminal
 from MiniParse.Meta.Drawable.Terminal import Terminal
 from MiniParse.Meta.Drawable.Null import Null
-from MiniParse.Meta.Drawable.Builder import Builder
+from MiniParse.Meta.Drawable import builder
 
 
 class DrawableTestCase(unittest.TestCase):
@@ -141,3 +141,14 @@ class DrawableTestCase(unittest.TestCase):
                 ])
             ))
         ]
+
+
+class BuilderTestCase(unittest.TestCase):
+    def testNormalSequence(self):
+        s = builder.makeSequence([Terminal("foo"), Terminal("bar")])
+        self.assertEqual(len(s.nodes), 2)
+
+    def testSequenceWithCommonPartBeforeRepetition(self):
+        s = builder.makeSequence([Terminal("foo"), Repetition(Null, Terminal("foo"))])
+        self.assertEqual(len(s.nodes), 1)
+        self.assertEqual(s.nodes[0].forward.value, "foo")

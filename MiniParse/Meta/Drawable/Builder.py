@@ -24,26 +24,63 @@ from Null import Null
 
 
 class Builder:
-    def makeSyntax(self, rules):  # pragma no cover
+    def makeSyntax(self, rules):  # pragma no cover (Too simple)
         return Syntax(rules)
 
-    def makeRule(self, name, d):  # pragma no cover
+    def makeRule(self, name, d):  # pragma no cover (Too simple)
         return Rule(name, d)
 
-    def makeAlternative(self, elems):  # pragma no cover
+    def makeAlternative(self, elems):  # pragma no cover (Too simple)
         return Alternative(elems)
 
-    def makeSequence(self, elems):  # pragma no cover
-        return Sequence(elems)
+    def makeSequence(self, elems):
+        nodes = []
+        for elem in elems:
+            if isinstance(elem, Repetition):
+                forward = elem.forward
+                backward = elem.backward
+                while len(nodes) != 0 and self.__isSuffix(nodes[-1], backward):
+                    forward = self.__prepend(nodes[-1], forward)
+                    backward = self.__removeSuffix(backward)
+                    nodes.pop()
+                elem = Repetition(forward, backward)
+            nodes.append(elem)
+        return Sequence(nodes)
 
-    def makeRepeated(self, x):  # pragma no cover
+    def __isSuffix(self, suffix, node):
+        if node.__class__ == suffix.__class__ and node.__dict__ == suffix.__dict__:  # @todo Deep comparison?
+            return True
+        if isinstance(node, Sequence) and self.__isSuffix(suffix, node.nodes[-1]):
+            return True
+        return False
+
+    def __prepend(self, prefix, node):
+        if node is Null:
+            return prefix
+        elif isinstance(node, Sequence):
+            return Sequence([prefix] + node.nodes)
+        else:
+            return Sequence([prefix, node])
+
+    def __removeSuffix(self, node):
+        if isinstance(node, Sequence):
+            if len(node.nodes) == 1:
+                return Null
+            elif len(node.nodes) == 2:
+                return node.nodes[0]
+            else:
+                return Sequence(node.nodes[:-1])
+        else:
+            return Null
+
+    def makeRepeated(self, x):  # pragma no cover (Too simple)
         return Repetition(Null, x)
 
-    def makeOptional(self, x):  # pragma no cover
+    def makeOptional(self, x):  # pragma no cover (Too simple)
         return Alternative([Null, x])
 
-    def makeTerminal(self, value):  # pragma no cover
+    def makeTerminal(self, value):  # pragma no cover (Too simple)
         return Terminal(value)
 
-    def makeNonTerminal(self, value):  # pragma no cover
+    def makeNonTerminal(self, value):  # pragma no cover (Too simple)
         return NonTerminal(value)
