@@ -16,14 +16,14 @@
 import os
 import unittest
 
-import MiniParse.Meta.HandWrittenEbnf.Tokens as Tok
-import MiniParse.Meta.HandWrittenEbnf
+import MiniParse.Meta.Grammars.HandWrittenEbnf.Tokens as Tok
+import MiniParse.Meta.Grammars.HandWrittenEbnf
 from MiniParse.Meta.Syntax import *
 
 
 class HandWrittenEbnfParserTestCase(unittest.TestCase):
     def parse(self, input, output):
-        self.assertEqual(MiniParse.Meta.HandWrittenEbnf.parse(input), output)
+        self.assertEqual(MiniParse.Meta.Grammars.HandWrittenEbnf.parse(input), output)
 
     def testTerminal(self):
         self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", Terminal("bar"))]))

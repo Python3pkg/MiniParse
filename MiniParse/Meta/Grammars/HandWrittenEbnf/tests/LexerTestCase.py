@@ -16,8 +16,8 @@
 import os
 import unittest
 
-import MiniParse.Meta.HandWrittenEbnf.Tokens as Tok
-from MiniParse.Meta.HandWrittenEbnf.Lexer import Lexer
+import MiniParse.Meta.Grammars.HandWrittenEbnf.Tokens as Tok
+from MiniParse.Meta.Grammars.HandWrittenEbnf.Lexer import Lexer
 
 
 class HandWrittenEbnfLexerTestCase(unittest.TestCase):
