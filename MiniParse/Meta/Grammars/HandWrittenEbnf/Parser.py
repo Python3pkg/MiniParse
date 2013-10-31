@@ -161,7 +161,7 @@ class Parser:
     # 4.3
     syntaxRule = SequenceParser(
         [metaIdentifier, LiteralParser(Tok.Defining), definitionsList, LiteralParser(Tok.Terminator)],
-        lambda name, defining, value, terminator: SyntaxRule(name, value)
+        lambda name, defining, value, terminator: Rule(name, value)
     )
 
     # 4.2

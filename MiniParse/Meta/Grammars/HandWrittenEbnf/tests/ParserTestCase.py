@@ -26,55 +26,55 @@ class HandWrittenEbnfParserTestCase(unittest.TestCase):
         self.assertEqual(MiniParse.Meta.Grammars.HandWrittenEbnf.parse(input), output)
 
     def testTerminal(self):
-        self.parse("foo = 'bar';", Syntax([SyntaxRule("foo", Terminal("bar"))]))
+        self.parse("foo = 'bar';", Syntax([Rule("foo", Terminal("bar"))]))
 
     def testSeveralRules(self):
-        self.parse("foo = 'bar'; foo='baz';", Syntax([SyntaxRule("foo", Terminal("bar")), SyntaxRule("foo", Terminal("baz"))]))
+        self.parse("foo = 'bar'; foo='baz';", Syntax([Rule("foo", Terminal("bar")), Rule("foo", Terminal("baz"))]))
 
     def testAlternative(self):
-        self.parse("foo = 'bar' | 'baz';", Syntax([SyntaxRule("foo", Alternative([Terminal("bar"), Terminal("baz")]))]))
+        self.parse("foo = 'bar' | 'baz';", Syntax([Rule("foo", Alternative([Terminal("bar"), Terminal("baz")]))]))
 
     def testSequence(self):
-        self.parse("foo = 'bar', 'baz';", Syntax([SyntaxRule("foo", Sequence([Terminal("bar"), Terminal("baz")]))]))
+        self.parse("foo = 'bar', 'baz';", Syntax([Rule("foo", Sequence([Terminal("bar"), Terminal("baz")]))]))
 
     def testRepetition(self):
-        self.parse("foo = 3 * 'bar';", Syntax([SyntaxRule("foo", Repetition(3, Terminal("bar")))]))
+        self.parse("foo = 3 * 'bar';", Syntax([Rule("foo", Repetition(3, Terminal("bar")))]))
 
     def testOption(self):
-        self.parse("foo = ['bar'];", Syntax([SyntaxRule("foo", Optional(Terminal("bar")))]))
+        self.parse("foo = ['bar'];", Syntax([Rule("foo", Optional(Terminal("bar")))]))
 
     def testRepeated(self):
-        self.parse("foo = {'bar'};", Syntax([SyntaxRule("foo", Repeated(Terminal("bar")))]))
+        self.parse("foo = {'bar'};", Syntax([Rule("foo", Repeated(Terminal("bar")))]))
 
     def testGroup(self):
-        self.parse("foo = ('bar');", Syntax([SyntaxRule("foo", Terminal("bar"))]))
+        self.parse("foo = ('bar');", Syntax([Rule("foo", Terminal("bar"))]))
 
     def testNonTerminal(self):
-        self.parse("foo = bar;", Syntax([SyntaxRule("foo", NonTerminal("bar"))]))
+        self.parse("foo = bar;", Syntax([Rule("foo", NonTerminal("bar"))]))
 
     def testRestriction(self):
-        self.parse("foo = bar - baz;", Syntax([SyntaxRule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
+        self.parse("foo = bar - baz;", Syntax([Rule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
 
     def testGroupedRestriction1(self):
-        self.parse("foo = (bar) - (baz);", Syntax([SyntaxRule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
+        self.parse("foo = (bar) - (baz);", Syntax([Rule("foo", Restriction(NonTerminal("bar"), NonTerminal("baz")))]))
 
     def testGroupedRestriction2(self):
         self.parse(
             "foo = (bar, toto) - (baz | tutu);",
-            Syntax([SyntaxRule(
+            Syntax([Rule(
                 'foo',
                 Restriction(Sequence([NonTerminal('bar'), NonTerminal('toto')]), Alternative([NonTerminal('baz'), NonTerminal('tutu')]))
             )])
         )
 
     def testEmpty(self):
-        self.parse("foo = ;", Syntax([SyntaxRule("foo", Sequence([]))]))
+        self.parse("foo = ;", Syntax([Rule("foo", Sequence([]))]))
 
     def testComplexRule(self):
         self.parse(
             "foo = {bar, 'baz', {(2 * 'to', {'tutu'}) | blabla}};",
             Syntax([
-                SyntaxRule(
+                Rule(
                     'foo',
                     Repeated(
                         Sequence([

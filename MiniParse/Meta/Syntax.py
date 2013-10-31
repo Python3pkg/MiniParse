@@ -13,104 +13,59 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import Generable.Syntax as G
+
 
 class _deepComparable:
     def __eq__(self, other):
         return other.__class__ is self.__class__ and other.__dict__ == self.__dict__
 
 
-class Syntax(_deepComparable):
+class Syntax(_deepComparable, G.Syntax):
     def __init__(self, rules):
-        self.__rules = rules
-
-    def generateMiniParser(self, computeParserName, computeMatchName):
-        return (
-            "from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser\n"
-            + "\n"
-            + "\n"
-            + "".join(rule.generate(computeParserName, computeMatchName) for rule in self.__rules)
-        )
+        G.Syntax.__init__(self, rules)
 
 
-class SyntaxRule(_deepComparable):
+class Rule(_deepComparable, G.Rule):
     def __init__(self, name, definition):
-        self.__name = name
-        self.__definition = definition
-
-    def generate(self, computeParserName, computeMatchName):
-        parserName = computeParserName(self.__name)
-        matchName = computeMatchName(self.__name)
-        if isinstance(self.__definition, (Terminal, NonTerminal)):  # @todo Use a virtual method...
-            return parserName + " = " + self.__definition.generate(computeParserName) + "\n"
-        else:
-            return (
-                "class " + parserName + ":\n"
-                + "    @staticmethod\n"
-                + "    def apply(cursor):\n"
-                + "        return " + self.__definition.generate(computeParserName, ", " + matchName) + ".apply(cursor)\n"
-                + "\n"
-                + "\n"
-            )
+        G.Rule.__init__(self, name, definition)
 
 
-class Sequence(_deepComparable):
+class Sequence(_deepComparable, G.Sequence):
     def __init__(self, terms):
-        self.__terms = terms
-
-    def generate(self, computeParserName, args=""):
-        return "SequenceParser([" + ", ".join(t.generate(computeParserName) for t in self.__terms) + "]" + args + ")"
+        G.Sequence.__init__(self, terms)
 
 
-class Alternative(_deepComparable):
+class Alternative(_deepComparable, G.Alternative):
     def __init__(self, definitions):
-        self.__definitions = definitions
-
-    def generate(self, computeParserName, args=""):
-        return "AlternativeParser([" + ", ".join(d.generate(computeParserName) for d in self.__definitions) + "]" + args + ")"
+        G.Alternative.__init__(self, definitions)
 
 
 class Repetition(_deepComparable):
     def __init__(self, number, primary):
-        self.__number = number
-        self.__primary = primary
+        pass
 
 
-class Optional(_deepComparable):
+class Optional(_deepComparable, G.Optional):
     def __init__(self, definition):
-        self.__definition = definition
-
-    def generate(self, computeParserName, args=""):
-        return "OptionalParser(" + self.__definition.generate(computeParserName) + args + ")"
+        G.Optional.__init__(self, definition)
 
 
-class Repeated(_deepComparable):
+class Repeated(_deepComparable, G.Repeated):
     def __init__(self, definition):
-        self.__definition = definition
-
-    def generate(self, computeParserName, args=""):
-        return "RepeatedParser(" + self.__definition.generate(computeParserName) + args + ")"
+        G.Repeated.__init__(self, definition)
 
 
-class Terminal(_deepComparable):
+class Terminal(_deepComparable, G.Terminal):
     def __init__(self, value):
-        self.__value = value
-
-    def generate(self, computeParserName):
-        return "LiteralParser(" + repr(self.__value) + ")"
+        G.Terminal.__init__(self, value)
 
 
-class NonTerminal(_deepComparable):
+class NonTerminal(_deepComparable, G.NonTerminal):
     def __init__(self, name):
-        self.__name = name
-
-    def generate(self, computeParserName):
-        return computeParserName(self.__name)
+        G.NonTerminal.__init__(self, name)
 
 
-class Restriction(_deepComparable):
+class Restriction(_deepComparable, G.Restriction):
     def __init__(self, base, exception):
-        self.__base = base
-        self.__exception = exception
-
-    def generate(self, computeParserName, args=""):
-        return "RestrictionParser(" + self.__base.generate(computeParserName) + ", " + self.__exception.generate(computeParserName) + args + ")"
+        G.Restriction.__init__(self, base, exception)
