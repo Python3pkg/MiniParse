@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 import Generable.Syntax as G
+import Drawable as D
 
 
 class _deepComparable:
@@ -21,24 +22,28 @@ class _deepComparable:
         return other.__class__ is self.__class__ and other.__dict__ == self.__dict__
 
 
-class Syntax(_deepComparable, G.Syntax):
+class Syntax(_deepComparable, G.Syntax, D.Syntax):
     def __init__(self, rules):
         G.Syntax.__init__(self, rules)
+        D.Syntax.__init__(self, rules)
 
 
-class Rule(_deepComparable, G.Rule):
+class Rule(_deepComparable, G.Rule, D.Rule):
     def __init__(self, name, definition):
         G.Rule.__init__(self, name, definition)
+        D.Rule.__init__(self, name, definition)
 
 
-class Sequence(_deepComparable, G.Sequence):
+class Sequence(_deepComparable, G.Sequence, D.Sequence):
     def __init__(self, terms):
         G.Sequence.__init__(self, terms)
+        D.Sequence.__init__(self, terms)
 
 
-class Alternative(_deepComparable, G.Alternative):
+class Alternative(_deepComparable, G.Alternative, D.Alternative):
     def __init__(self, definitions):
         G.Alternative.__init__(self, definitions)
+        D.Alternative.__init__(self, definitions)
 
 
 class Repetition(_deepComparable):
@@ -46,24 +51,28 @@ class Repetition(_deepComparable):
         pass
 
 
-class Optional(_deepComparable, G.Optional):
+class Optional(_deepComparable, G.Optional, D.Alternative):
     def __init__(self, definition):
         G.Optional.__init__(self, definition)
+        D.Alternative.__init__(self, [D.Null, definition])
 
 
-class Repeated(_deepComparable, G.Repeated):
+class Repeated(_deepComparable, G.Repeated, D.Repetition):
     def __init__(self, definition):
         G.Repeated.__init__(self, definition)
+        D.Repetition.__init__(self, D.Null, definition)
 
 
-class Terminal(_deepComparable, G.Terminal):
+class Terminal(_deepComparable, G.Terminal, D.Terminal):
     def __init__(self, value):
         G.Terminal.__init__(self, value)
+        D.Terminal.__init__(self, value)
 
 
-class NonTerminal(_deepComparable, G.NonTerminal):
+class NonTerminal(_deepComparable, G.NonTerminal, D.NonTerminal):
     def __init__(self, name):
         G.NonTerminal.__init__(self, name)
+        D.NonTerminal.__init__(self, name)
 
 
 class Restriction(_deepComparable, G.Restriction):

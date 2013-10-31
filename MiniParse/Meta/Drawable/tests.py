@@ -55,6 +55,11 @@ class DrawableTestCase(unittest.TestCase):
             Rule("terminal", Terminal("in a rounded rectangle"))
         ]
 
+    def testNull(self):
+        self.rules = [
+            Rule("sequence with null", Sequence([Terminal("space here ->"), Null, Terminal("should be like here ->"), Terminal("foo")]))
+        ]
+
     def testRuleNamesWithAscentAndDescent(self):
         self.rules = [
             Rule("aaaaa", NonTerminal("ascent and descent")),

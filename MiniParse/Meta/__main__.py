@@ -47,11 +47,40 @@ class Generate(ICL.Command):
             f.write(g.generateMiniParser(self.computeParserName, self.computeMatchName))
 
 
+class Draw(ICL.Command):
+    def __init__(self, prog):
+        ICL.Command.__init__(self, "draw", "Draw rail diagram for the input grammar")
+        self.__prog = prog
+        self.outputName = None
+        self.addOption(ICL.StoringOption("out", "Output file", self, "outputName", ICL.ValueFromOneArgument("NAME")))
+
+    def execute(self):
+        import cairo
+
+        inputName, g = self.__prog.input
+        if self.outputName is None:
+            self.outputName = inputName[:-5] + ".png"
+        img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
+        ctx = cairo.Context(img)
+        ctx.scale(3, 3)
+        w, h = g.getExtents(ctx)
+        img = cairo.ImageSurface(cairo.FORMAT_RGB24, 3 * int(w) + 10, 3 * int(h) + 10)
+        ctx = cairo.Context(img)
+        ctx.translate(5, 5)
+        ctx.scale(3, 3)
+        ctx.set_source_rgb(1, 1, 1)
+        ctx.paint()
+        ctx.set_source_rgb(0, 0, 0)
+        g.draw(ctx)
+        img.write_to_png(self.outputName)
+
+
 class Program(ICL.Program):
     def __init__(self):
         ICL.Program.__init__(self, "python -m MiniParse.Meta")
         self.addOption(ICL.StoringOption("in", "Input file", self, "input", ICL.ValueFromOneArgument("NAME", self.__parseGrammarFile)))
         self.addCommand(Generate(self))
+        self.addCommand(Draw(self))
 
     def __parseGrammarFile(self, input):
         with open(input) as f:

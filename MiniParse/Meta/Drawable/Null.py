@@ -13,11 +13,13 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Syntax import Syntax
-from Rule import Rule
-from Alternative import Alternative
-from Sequence import Sequence
-from Repetition import Repetition
-from Terminal import Terminal
-from NonTerminal import NonTerminal
-from Null import Null
+
+class __Null:
+    def getExtents(self, drawer):
+        return 0, 0, 0
+
+    def draw(self, drawer):
+        pass
+
+
+Null = __Null()
