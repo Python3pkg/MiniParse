@@ -19,6 +19,8 @@ import pipes  # For pipes.quote: see http://stackoverflow.com/questions/4748344/
 import InteractiveCommandLine as ICL
 
 import Grammars.HandWrittenEbnf
+import Generable
+import Drawable
 
 
 class Generate(ICL.Command):
@@ -35,7 +37,9 @@ class Generate(ICL.Command):
         self.addOption(ICL.AppendingOption("import", "Module to import in generated code", self.imports, ICL.ValueFromOneArgument("MODULE")))
 
     def execute(self):
-        inputName, g = self.__prog.input
+        inputName = self.__prog.inputName
+        with open(inputName) as f:
+            g = Grammars.HandWrittenEbnf.parse(Generable.builder, f.read())
         if self.outputName is None:
             self.outputName = inputName[:-5] + ".py"
         with open(self.outputName, "w") as f:
@@ -57,7 +61,9 @@ class Draw(ICL.Command):
     def execute(self):
         import cairo
 
-        inputName, g = self.__prog.input
+        inputName = self.__prog.inputName
+        with open(inputName) as f:
+            g = Grammars.HandWrittenEbnf.parse(Drawable.builder, f.read())
         if self.outputName is None:
             self.outputName = inputName[:-5] + ".png"
         img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
@@ -78,13 +84,9 @@ class Draw(ICL.Command):
 class Program(ICL.Program):
     def __init__(self):
         ICL.Program.__init__(self, "python -m MiniParse.Meta")
-        self.addOption(ICL.StoringOption("in", "Input file", self, "input", ICL.ValueFromOneArgument("NAME", self.__parseGrammarFile)))
+        self.addOption(ICL.StoringOption("in", "Input file", self, "inputName", ICL.ValueFromOneArgument("NAME")))
         self.addCommand(Generate(self))
         self.addCommand(Draw(self))
-
-    def __parseGrammarFile(self, input):
-        with open(input) as f:
-            return (input, Grammars.HandWrittenEbnf.parse(f.read()))
 
 
 Program().execute()

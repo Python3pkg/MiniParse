@@ -17,7 +17,15 @@ import unittest
 import cairo
 import os
 
-from MiniParse.Meta.Drawable import *
+from MiniParse.Meta.Drawable.Syntax import Syntax
+from MiniParse.Meta.Drawable.Rule import Rule
+from MiniParse.Meta.Drawable.Sequence import Sequence
+from MiniParse.Meta.Drawable.Repetition import Repetition
+from MiniParse.Meta.Drawable.Alternative import Alternative
+from MiniParse.Meta.Drawable.NonTerminal import NonTerminal
+from MiniParse.Meta.Drawable.Terminal import Terminal
+from MiniParse.Meta.Drawable.Null import Null
+from MiniParse.Meta.Drawable.Builder import Builder
 
 
 class DrawableTestCase(unittest.TestCase):

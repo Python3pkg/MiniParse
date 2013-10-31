@@ -18,5 +18,7 @@ import Lexer
 import Parser
 
 
-def parse(s):
-    return MiniParse.parse(Parser.Parser.syntax, Lexer.Lexer()(s))
+def parse(builder, input):
+    lex = Lexer.Lexer()
+    parse = Parser.Parser(builder)
+    return parse(lex(input))
