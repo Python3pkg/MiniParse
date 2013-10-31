@@ -13,25 +13,6 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import collections
-import math
-
-
-class NonTerminal:
-    fontSize = 1
-
-    def __init__(self, value):
-        self.value = value
-
-    def getExtents(self, drawer):
-        r, u, d = drawer.getTextInRectangleExtents(self.value, self.fontSize)
-        return 2 * drawer.baseLength + r, u, d
-
-    def draw(self, drawer):
-        drawer.advanceWithArrow()
-        drawer.drawTextInRectangle(self.value, self.fontSize)
-        drawer.advance()
-
 
 class Terminal:
     fontSize = 1

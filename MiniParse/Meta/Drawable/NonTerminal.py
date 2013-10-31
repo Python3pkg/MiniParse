@@ -13,10 +13,18 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Syntax import Syntax
-from Rule import Rule
-from Alternative import Alternative
-from Sequence import Sequence
-from Repetition import Repetition
-from Terminal import Terminal
-from NonTerminal import NonTerminal
+
+class NonTerminal:
+    fontSize = 1
+
+    def __init__(self, value):
+        self.value = value
+
+    def getExtents(self, drawer):
+        r, u, d = drawer.getTextInRectangleExtents(self.value, self.fontSize)
+        return 2 * drawer.baseLength + r, u, d
+
+    def draw(self, drawer):
+        drawer.advanceWithArrow()
+        drawer.drawTextInRectangle(self.value, self.fontSize)
+        drawer.advance()

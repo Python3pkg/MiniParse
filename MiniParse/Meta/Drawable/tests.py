@@ -77,6 +77,13 @@ class DrawableTestCase(unittest.TestCase):
             ]))
         ]
 
+    def testAlternativeWithOneBranch(self):
+        self.rules = [
+            Rule("alternative", Alternative([
+                NonTerminal("with one branch")
+            ]))
+        ]
+
     def testSequence(self):
         self.rules = [
             Rule("sequence", Sequence([

@@ -13,61 +13,55 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-import collections
-import math
-
 
 class Alternative:
-    verticalSpace = 10
-
     def __init__(self, nodes):
         self.nodes = nodes
-        self.extents = []
-        self.maxNodeDxRight = 0
-        self.totalHeight = 0
 
     def getExtents(self, drawer):
-        self.computeExtents(drawer)
+        extents, maxNodeDxRight, totalHeight = self.computeExtents(drawer)
 
         return (
-            2 * drawer.baseLength + self.maxNodeDxRight,
-            self.extents[0][1],
-            self.totalHeight - self.extents[0][1]
+            2 * drawer.baseLength + maxNodeDxRight,
+            extents[0][1],
+            totalHeight - extents[0][1]
         )
 
     def computeExtents(self, drawer):
-        self.extents = []
-        self.maxNodeDxRight = 0
-        self.totalHeight = self.verticalSpace * (len(self.nodes) - 1)
+        extents = []
+        maxNodeDxRight = 0
+        totalHeight = drawer.baseLength * (len(self.nodes) - 1)
 
         for node in self.nodes:
             r, u, d = node.getExtents(drawer)
-            self.extents.append((r, u, d))
-            self.maxNodeDxRight = max(self.maxNodeDxRight, r)
-            self.totalHeight += u + d
+            extents.append((r, u, d))
+            maxNodeDxRight = max(maxNodeDxRight, r)
+            totalHeight += u + d
+
+        return extents, maxNodeDxRight, totalHeight
 
     def draw(self, drawer):
-        self.computeExtents(drawer)
+        extents, maxNodeDxRight, totalHeight = self.computeExtents(drawer)
 
         turnLeft, turnRight = drawer.getTurns()
 
-        y = self.extents[0][2]
+        y = extents[0][2]
         for i, node in enumerate(self.nodes[1:]):
-            y += self.extents[i + 1][1]
+            y += extents[i + 1][1]
             with drawer.branch:
                 turnRight()
                 drawer.advance(y)
                 turnLeft()
-                drawer.advance((self.maxNodeDxRight - self.extents[i + 1][0]) / 2)
+                drawer.advance((maxNodeDxRight - extents[i + 1][0]) / 2)
                 node.draw(drawer)
-                drawer.advance((self.maxNodeDxRight - self.extents[i + 1][0]) / 2)
+                drawer.advance((maxNodeDxRight - extents[i + 1][0]) / 2)
                 turnLeft()
                 drawer.advance(y)
                 turnRight()
-            y += self.extents[i + 1][2]
+            y += extents[i + 1][2]
             y += drawer.baseLength
         drawer.advance()
-        drawer.advance((self.maxNodeDxRight - self.extents[0][0]) / 2)
+        drawer.advance((maxNodeDxRight - extents[0][0]) / 2)
         self.nodes[0].draw(drawer)
-        drawer.advance((self.maxNodeDxRight - self.extents[0][0]) / 2)
+        drawer.advance((maxNodeDxRight - extents[0][0]) / 2)
         drawer.advance()
