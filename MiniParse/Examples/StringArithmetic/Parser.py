@@ -64,5 +64,3 @@ class DigitParser:
     @staticmethod
     def apply(cursor):
         return AlternativeParser([LiteralParser('0'), LiteralParser('1'), LiteralParser('2'), LiteralParser('3'), LiteralParser('4'), LiteralParser('5'), LiteralParser('6'), LiteralParser('7'), LiteralParser('8'), LiteralParser('9')], ParsingUtilities.makeDigit).apply(cursor)
-
-

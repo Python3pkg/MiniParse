@@ -119,7 +119,7 @@ class Drawer(object):
     def getTextInRectangleExtents(self, text, size):
         w, h = self.getTextExtents(text, size)
         w += self.baseLength
-        h += self.baseLength            
+        h += self.baseLength
         return w, h / 2, h / 2
 
     def drawTextInRectangle(self, text, size):

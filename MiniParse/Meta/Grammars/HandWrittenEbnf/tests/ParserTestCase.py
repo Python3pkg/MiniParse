@@ -19,6 +19,7 @@ import unittest
 import MiniParse.Meta.Grammars.HandWrittenEbnf.Tokens as Tok
 import MiniParse.Meta.Grammars.HandWrittenEbnf
 
+
 class Builder:
     def __getattr__(self, name):
         assert name.startswith("make")
