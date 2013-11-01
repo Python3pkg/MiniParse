@@ -27,6 +27,7 @@ function check {
 }
 
 function test2 {
+    generate
     coverage run --branch --include=MiniParse/*.py --omit=MiniParse/tests/*.py setup.py test --quiet || exit
     coverage report --show-missing || exit
 }

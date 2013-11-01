@@ -41,5 +41,11 @@ class Builder:
     def makeNonTerminal(self, value):
         return NonTerminal(value)
 
+    def makeRepetition(self, n, x):
+        return Repetition(n, x)
+
+    def makeRestriction(self, b, x):
+        return Restriction(b, x)
+
 
 builder = Builder()
