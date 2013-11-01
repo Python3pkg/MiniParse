@@ -13,6 +13,8 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import Null
+
 
 class Repetition:
     def __init__(self, forward, backward):
@@ -52,3 +54,24 @@ class Repetition:
             drawer.advance(forwardDown + backwardUp)
             turnRight()
         drawer.advance()
+
+    def __repr__(self):
+        return "Repetition(" + repr(self.forward) + ", " + repr(self.backward) + ")"
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def _simplify(self):
+        return Repetition(self.forward._simplify(), self.backward._simplify())
+
+    def _getAtomicSuffix(self):
+        return self
+
+    def _removeAtomicSuffix(self):
+        return Null.Null
+
+    def _getAtomicPrefix(self):
+        return self
+
+    def _removeAtomicPrefix(self):
+        return Null.Null

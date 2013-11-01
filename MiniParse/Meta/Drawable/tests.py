@@ -143,12 +143,103 @@ class DrawableTestCase(unittest.TestCase):
         ]
 
 
-class BuilderTestCase(unittest.TestCase):
-    def testNormalSequence(self):
-        s = builder.makeSequence([Terminal("foo"), Terminal("bar")])
-        self.assertEqual(len(s.nodes), 2)
+class SimplificationTestCase(unittest.TestCase):
+    def testAlternativeWithOneBranch(self):
+        a = builder.makeAlternative([Terminal("foo")])
+        b = Terminal("foo")
+        self.assertEqual(a, b)
 
-    def testSequenceWithCommonPartBeforeRepetition(self):
-        s = builder.makeSequence([Terminal("foo"), Repetition(Null, Terminal("foo"))])
-        self.assertEqual(len(s.nodes), 1)
-        self.assertEqual(s.nodes[0].forward.value, "foo")
+    def testAlternativeInAlternative(self):
+        a = builder.makeAlternative([Terminal("foo"), Alternative([Terminal("bar"), Terminal("baz")])])
+        b = Alternative([Terminal("foo"), Terminal("bar"), Terminal("baz")])
+        self.assertEqual(a, b)
+
+    def testDuplicateBranchInAlternative(self):
+        a = builder.makeAlternative([Terminal("bar"), Terminal("foo"), Terminal("bar"), Null])
+        b = Alternative([Terminal("bar"), Terminal("foo"), Null])
+        self.assertEqual(a, b)
+
+    def testMultipleSimplifcationSteps(self):
+        a = builder.makeAlternative([Terminal("bar"), Alternative([Terminal("bar"), Terminal("bar")])])
+        b = Terminal("bar")
+        self.assertEqual(a, b)
+
+    def testEmptySequence(self):
+        a = builder.makeSequence([])
+        b = Null
+        self.assertEqual(a, b)
+
+    def testSequenceWithOneElement(self):
+        a = builder.makeSequence([NonTerminal("foo")])
+        b = NonTerminal("foo")
+        self.assertEqual(a, b)
+
+    def testSequenceInSequence(self):
+        a = builder.makeSequence([NonTerminal("foo"), Sequence([Terminal("bar"), Terminal("baz")])])
+        b = Sequence([NonTerminal("foo"), Terminal("bar"), Terminal("baz")])
+        self.assertEqual(a, b)
+
+    def testNullInSequence(self):
+        a = builder.makeSequence([NonTerminal("foo"), Null, Terminal("bar"), Null, Terminal("baz")])
+        b = Sequence([NonTerminal("foo"), Terminal("bar"), Terminal("baz")])
+        self.assertEqual(a, b)
+
+    def testCommonTerminalBeforeRepetition(self):
+        a = builder.makeSequence([Terminal("a"), Repetition(Null, Terminal("a"))])
+        b = Repetition(Terminal("a"), Null)
+        self.assertEqual(a, b)
+
+    def testCommonNonTerminalBeforeRepetition(self):
+        a = builder.makeSequence([NonTerminal("a"), Repetition(Null, NonTerminal("a"))])
+        b = Repetition(NonTerminal("a"), Null)
+        self.assertEqual(a, b)
+
+    def testCommonSequenceBeforeRepetition(self):
+        a = builder.makeSequence([NonTerminal("b"), Terminal("a"), Repetition(Null, Sequence([NonTerminal("b"), Terminal("a")]))])
+        b = Repetition(Sequence([NonTerminal("b"), Terminal("a")]), Null)
+        self.assertEqual(a, b)
+
+    def testCommonAlternativeBeforeRepetition(self):
+        a = builder.makeSequence([Alternative([Terminal("d"), Terminal("e")]), Repetition(Null, Alternative([Terminal("d"), Terminal("e")]))])
+        b = Repetition(Alternative([Terminal("d"), Terminal("e")]), Null)
+        self.assertEqual(a, b)
+
+    def testCommonRepetitionBeforeRepetition(self):
+        a = builder.makeSequence([Repetition(Terminal("d"), Terminal("e")), Repetition(Null, Repetition(Terminal("d"), Terminal("e")))])
+        b = Repetition(Repetition(Terminal("d"), Terminal("e")), Null)
+        self.assertEqual(a, b)
+
+    def testNoCommonNullBeforeRepetition(self):
+        a = builder.makeSequence([Terminal("d"), Repetition(NonTerminal("b"), Null)])
+        b = Sequence([Terminal("d"), Repetition(NonTerminal("b"), Null)])
+        self.assertEqual(a, b)
+
+    def testCommonTerminalAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, Terminal("a")), Terminal("a")])
+        b = Repetition(Terminal("a"), Null)
+        self.assertEqual(a, b)
+
+    def testCommonNonTerminalAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, NonTerminal("a")), NonTerminal("a")])
+        b = Repetition(NonTerminal("a"), Null)
+        self.assertEqual(a, b)
+
+    def testCommonSequenceAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, Sequence([NonTerminal("b"), Terminal("a")])), NonTerminal("b"), Terminal("a")])
+        b = Repetition(Sequence([NonTerminal("b"), Terminal("a")]), Null)
+        self.assertEqual(a, b)
+
+    def testCommonAlternativeAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, Alternative([Terminal("d"), Terminal("e")])), Alternative([Terminal("d"), Terminal("e")])])
+        b = Repetition(Alternative([Terminal("d"), Terminal("e")]), Null)
+        self.assertEqual(a, b)
+
+    def testCommonRepetitionAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, Repetition(Terminal("d"), Terminal("e"))), Repetition(Terminal("d"), Terminal("e"))])
+        b = Repetition(Repetition(Terminal("d"), Terminal("e")), Null)
+        self.assertEqual(a, b)
+
+    def testNoCommonNullAfterRepetition(self):
+        a = builder.makeSequence([Repetition(NonTerminal("b"), Null), Terminal("d")])
+        b = Sequence([Repetition(NonTerminal("b"), Null), Terminal("d")])
+        self.assertEqual(a, b)

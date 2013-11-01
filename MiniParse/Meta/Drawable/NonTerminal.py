@@ -13,6 +13,8 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import Null
+
 
 class NonTerminal:
     fontSize = 1
@@ -28,3 +30,24 @@ class NonTerminal:
         drawer.advanceWithArrow()
         drawer.drawTextInRectangle(self.value, self.fontSize)
         drawer.advance()
+
+    def __repr__(self):
+        return "NonTerminal(" + repr(self.value) + ")"
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def _simplify(self):
+        return self
+
+    def _getAtomicSuffix(self):
+        return self
+
+    def _removeAtomicSuffix(self):
+        return Null.Null
+
+    def _getAtomicPrefix(self):
+        return self
+
+    def _removeAtomicPrefix(self):
+        return Null.Null

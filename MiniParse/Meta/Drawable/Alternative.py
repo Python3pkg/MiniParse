@@ -13,6 +13,8 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import Null
+
 
 class Alternative:
     def __init__(self, nodes):
@@ -65,3 +67,36 @@ class Alternative:
         self.nodes[0].draw(drawer)
         drawer.advance((maxNodeDxRight - extents[0][0]) / 2)
         drawer.advance()
+
+    def __repr__(self):
+        return "Alternative(" + repr(self.nodes) + ")"
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def _simplify(self):
+        if len(self.nodes) == 1:
+            return self.nodes[0]
+        else:
+            newNodes = []
+            for node in self.nodes:
+                node = node._simplify()
+                if node.__class__ is Alternative:
+                    newNodes += node.nodes
+                elif any(n == node for n in newNodes):
+                    pass
+                else:
+                    newNodes.append(node)
+            return Alternative(newNodes)
+
+    def _getAtomicSuffix(self):
+        return self
+
+    def _removeAtomicSuffix(self):
+        return Null.Null
+
+    def _getAtomicPrefix(self):
+        return self
+
+    def _removeAtomicPrefix(self):
+        return Null.Null
