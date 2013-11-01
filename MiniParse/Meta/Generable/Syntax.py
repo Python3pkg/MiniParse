@@ -18,12 +18,13 @@ class Syntax:
     def __init__(self, rules):
         self.__rules = rules
 
-    def generateMiniParser(self, computeParserName, computeMatchName):
+    def generateMiniParser(self, mainRule, computeParserName, computeMatchName):
         return (
-            "from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser\n"
+            "class Parser:\n"
+            + "    def __call__(self, tokens):\n"
+            + "\n".join(rule.generate(computeParserName, computeMatchName) for rule in self.__rules)
             + "\n"
-            + "\n"
-            + "".join(rule.generate(computeParserName, computeMatchName) for rule in self.__rules)
+            + "        return MiniParse.parse(" + computeParserName(mainRule) + ", tokens)\n"
         )
 
 
@@ -36,15 +37,13 @@ class Rule:
         parserName = computeParserName(self.__name)
         matchName = computeMatchName(self.__name)
         if isinstance(self.__definition, (Terminal, NonTerminal)):  # @todo Use a virtual method...
-            return parserName + " = " + self.__definition.generate(computeParserName) + "\n"
+            return "        " + parserName + " = " + self.__definition.generate(computeParserName) + "\n"
         else:
             return (
-                "class " + parserName + ":\n"
-                + "    @staticmethod\n"
-                + "    def apply(cursor):\n"
-                + "        return " + self.__definition.generate(computeParserName, ", " + matchName) + ".apply(cursor)\n"
-                + "\n"
-                + "\n"
+                "        class " + parserName + ":\n"
+                + "            @staticmethod\n"
+                + "            def apply(cursor):\n"
+                + "                return " + self.__definition.generate(computeParserName, ", " + matchName) + ".apply(cursor)\n"
             )
 
 
@@ -53,7 +52,7 @@ class Sequence:
         self.__terms = terms
 
     def generate(self, computeParserName, args=""):
-        return "SequenceParser([" + ", ".join(t.generate(computeParserName) for t in self.__terms) + "]" + args + ")"
+        return "MiniParse.SequenceParser([" + ", ".join(t.generate(computeParserName) for t in self.__terms) + "]" + args + ")"
 
 
 class Alternative:
@@ -61,7 +60,7 @@ class Alternative:
         self.__definitions = definitions
 
     def generate(self, computeParserName, args=""):
-        return "AlternativeParser([" + ", ".join(d.generate(computeParserName) for d in self.__definitions) + "]" + args + ")"
+        return "MiniParse.AlternativeParser([" + ", ".join(d.generate(computeParserName) for d in self.__definitions) + "]" + args + ")"
 
 
 class Optional:
@@ -69,7 +68,7 @@ class Optional:
         self.__definition = definition
 
     def generate(self, computeParserName, args=""):
-        return "OptionalParser(" + self.__definition.generate(computeParserName) + args + ")"
+        return "MiniParse.OptionalParser(" + self.__definition.generate(computeParserName) + args + ")"
 
 
 class Repeated:
@@ -77,7 +76,7 @@ class Repeated:
         self.__definition = definition
 
     def generate(self, computeParserName, args=""):
-        return "RepeatedParser(" + self.__definition.generate(computeParserName) + args + ")"
+        return "MiniParse.RepeatedParser(" + self.__definition.generate(computeParserName) + args + ")"
 
 
 class Terminal:
@@ -85,7 +84,7 @@ class Terminal:
         self.__value = value
 
     def generate(self, computeParserName):
-        return "LiteralParser(" + repr(self.__value) + ")"
+        return "MiniParse.LiteralParser(" + repr(self.__value) + ")"
 
 
 class NonTerminal:
@@ -102,7 +101,7 @@ class Restriction:
         self.__exception = exception
 
     def generate(self, computeParserName, args=""):
-        return "RestrictionParser(" + self.__base.generate(computeParserName) + ", " + self.__exception.generate(computeParserName) + args + ")"
+        return "MiniParse.RestrictionParser(" + self.__base.generate(computeParserName) + ", " + self.__exception.generate(computeParserName) + args + ")"
 
 
 class Repetition:
@@ -111,4 +110,4 @@ class Repetition:
         self.__base = base
 
     def generate(self, computeParserName, args=""):
-        return "RepetitionParser(" + str(self.__n) + ", " + self.__base.generate(computeParserName) + args + ")"
+        return "MiniParse.RepetitionParser(" + str(self.__n) + ", " + self.__base.generate(computeParserName) + args + ")"

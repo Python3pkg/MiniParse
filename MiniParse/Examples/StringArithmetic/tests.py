@@ -21,12 +21,12 @@ import Parser
 
 class StringArithmeticTestCase(unittest.TestCase):
     def parseAndDump(self, input, expectedOutput):
-        actualOutput = MiniParse.parse(Parser.StringExprParser, input).dump()
+        actualOutput = Parser.Parser()(input).dump()
         self.assertEqual(actualOutput, expectedOutput)
 
     def expectSyntaxError(self, input, expectedPosition, expectedExpected):
         with self.assertRaises(MiniParse.SyntaxError) as cm:
-            actualOutput = MiniParse.parse(Parser.StringExprParser, input)
+            actualOutput = Parser.Parser()(input)
         exception = cm.exception
         actualPosition, actualExpected = exception.args
         self.assertEqual(actualPosition, expectedPosition)

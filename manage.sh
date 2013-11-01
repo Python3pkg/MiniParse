@@ -84,7 +84,7 @@ function run2to3 {
 }
 
 function generate {
-    python -m MiniParse.Meta --in MiniParse/Examples/StringArithmetic/Grammar.ebnf generate --out MiniParse/Examples/StringArithmetic/Parser.py --import ParsingUtilities --match-name-lambda 'lambda n: "ParsingUtilities.make" + n'
+    python -m MiniParse.Meta --in MiniParse/Examples/StringArithmetic/Grammar.ebnf generate --out MiniParse/Examples/StringArithmetic/Parser.py --import ParsingUtilities --match-name-lambda 'lambda n: "ParsingUtilities.make" + n' --main-rule StringExpr
     python -m MiniParse.Meta --in MiniParse/Examples/StringArithmetic/Grammar.ebnf draw
 }
 

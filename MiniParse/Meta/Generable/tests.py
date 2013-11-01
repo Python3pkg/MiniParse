@@ -15,18 +15,19 @@
 
 import unittest
 
+import MiniParse
 from MiniParse.Meta.Generable import builder
-from MiniParse.Meta.Grammars.HandWrittenEbnf import parse
+from MiniParse.Meta.Grammars.HandWrittenEbnf import parse as parseEbnf
 
 
 class GenerableIntegrationTestCase(unittest.TestCase):
     def test(self):
-        s = parse(builder, """
-            rule1 = { rule2 }, 3 * "foo", "bar";
-            rule2 = [ "baz" ], ( "xxx" | "yyy", , , "zzz" ), ("foo" - "bar");
-            rule3 = "toto";
+        s = parseEbnf(builder, """
+            toto = "toto";
+            main = toto | "titi";
         """)
-        p = s.generateMiniParser(computeParserName=lambda x: x.capitalize() + "Parser", computeMatchName=lambda x: "lambda *x: *x")
-        print
-        print p
-        print
+        code = s.generateMiniParser("main", computeParserName=lambda x: x.capitalize() + "Parser", computeMatchName=lambda x: "lambda x: x")
+        exec code
+        p = Parser()
+        self.assertEqual(p(["toto"]), "toto")
+        self.assertEqual(p(["titi"]), "titi")
