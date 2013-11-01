@@ -36,6 +36,17 @@ class ClassParser:
 # See http://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf
 class Parser:
     def __init__(self, builder):
+        assert hasattr(builder, "makeTerminal")
+        assert hasattr(builder, "makeNonTerminal")
+        assert hasattr(builder, "makeRepeated")
+        assert hasattr(builder, "makeOptional")
+        assert hasattr(builder, "makeRepetition")
+        assert hasattr(builder, "makeRestriction")
+        assert hasattr(builder, "makeAlternative")
+        assert hasattr(builder, "makeSequence")
+        assert hasattr(builder, "makeRule")
+        assert hasattr(builder, "makeSyntax")
+
         class Internal:
             # 4.21
             emptySequence = SequenceParser([], lambda: builder.makeSequence([]))

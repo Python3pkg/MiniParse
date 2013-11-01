@@ -18,6 +18,7 @@ import re
 import Tokens as Tok
 
 
+# @todo Do not loose the line/column information for reporting syntax errors in the parser
 class Lexer:
     def __init__(self):
         self.__space = re.compile("[ \t\n\r\v\f]*")

@@ -22,36 +22,42 @@ from MiniParse.Meta.Drawable.Rule import Rule
 from MiniParse.Meta.Drawable.Sequence import Sequence
 from MiniParse.Meta.Drawable.Repetition import Repetition
 from MiniParse.Meta.Drawable.Alternative import Alternative
+from MiniParse.Meta.Drawable.Restriction import Restriction
 from MiniParse.Meta.Drawable.NonTerminal import NonTerminal
 from MiniParse.Meta.Drawable.Terminal import Terminal
 from MiniParse.Meta.Drawable.Null import Null
 from MiniParse.Meta.Drawable import builder
+from MiniParse.Meta.Grammars.HandWrittenEbnf import parse
+
+
+def drawSyntaxTo(s, fileName):
+    img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
+    ctx = cairo.Context(img)
+    ctx.scale(3, 3)
+    w, h = s.getExtents(ctx)
+    img = cairo.ImageSurface(cairo.FORMAT_RGB24, 3 * (int(w) + 10), 3 * (int(h) + 10))
+    ctx = cairo.Context(img)
+    ctx.scale(3, 3)
+    ctx.set_source_rgb(0.8, 0.8, 0.8)
+    ctx.paint()
+    ctx.set_source_rgb(1, 1, 1)
+    ctx.translate(5, 5)
+    ctx.rectangle(0, 0, w, h)
+    ctx.fill()
+    ctx.set_source_rgb(0, 0, 0)
+    s.draw(ctx)
+    img.write_to_png(fileName)
 
 
 class DrawableTestCase(unittest.TestCase):
     def tearDown(self):
         s = Syntax(self.rules)
-        img = cairo.ImageSurface(cairo.FORMAT_RGB24, 1, 1)
-        ctx = cairo.Context(img)
-        ctx.scale(3, 3)
-        w, h = s.getExtents(ctx)
-        img = cairo.ImageSurface(cairo.FORMAT_RGB24, 3 * (int(w) + 10), 3 * (int(h) + 10))
-        ctx = cairo.Context(img)
-        ctx.scale(3, 3)
-        ctx.set_source_rgb(0.8, 0.8, 0.8)
-        ctx.paint()
-        ctx.set_source_rgb(1, 1, 1)
-        ctx.translate(5, 5)
-        ctx.rectangle(0, 0, w, h)
-        ctx.fill()
-        ctx.set_source_rgb(0, 0, 0)
-        s.draw(ctx)
         fileName = os.path.join(
             os.path.dirname(__file__),
             "TestsOutput",
             self.__class__.__name__ + "." + self._testMethodName + ".png"
         )
-        img.write_to_png(fileName)
+        drawSyntaxTo(s, fileName)
 
     def testNonTerminal(self):
         self.rules = [
@@ -142,6 +148,16 @@ class DrawableTestCase(unittest.TestCase):
             ))
         ]
 
+    def testRestrictionWithShorterException(self):
+        self.rules = [
+            Rule("restriction", Restriction(Terminal("long base branch"), Terminal("exception")))
+        ]
+
+    def testRestrictionWithLongerException(self):
+        self.rules = [
+            Rule("restriction", Restriction(Terminal("base"), Terminal("long exception branch")))
+        ]
+
 
 class SimplificationTestCase(unittest.TestCase):
     def testAlternativeWithOneBranch(self):
@@ -209,6 +225,11 @@ class SimplificationTestCase(unittest.TestCase):
         b = Repetition(Repetition(Terminal("d"), Terminal("e")), Null)
         self.assertEqual(a, b)
 
+    def testCommonRestrictionBeforeRepetition(self):
+        a = builder.makeSequence([Restriction(Terminal("d"), Terminal("e")), Repetition(Null, Restriction(Terminal("d"), Terminal("e")))])
+        b = Repetition(Restriction(Terminal("d"), Terminal("e")), Null)
+        self.assertEqual(a, b)
+
     def testNoCommonNullBeforeRepetition(self):
         a = builder.makeSequence([Terminal("d"), Repetition(NonTerminal("b"), Null)])
         b = Sequence([Terminal("d"), Repetition(NonTerminal("b"), Null)])
@@ -239,7 +260,26 @@ class SimplificationTestCase(unittest.TestCase):
         b = Repetition(Repetition(Terminal("d"), Terminal("e")), Null)
         self.assertEqual(a, b)
 
+    def testCommonRestrictionAfterRepetition(self):
+        a = builder.makeSequence([Repetition(Null, Restriction(Terminal("d"), Terminal("e"))), Restriction(Terminal("d"), Terminal("e"))])
+        b = Repetition(Restriction(Terminal("d"), Terminal("e")), Null)
+        self.assertEqual(a, b)
+
     def testNoCommonNullAfterRepetition(self):
         a = builder.makeSequence([Repetition(NonTerminal("b"), Null), Terminal("d")])
         b = Sequence([Repetition(NonTerminal("b"), Null), Terminal("d")])
         self.assertEqual(a, b)
+
+
+class DrawingIntegrationTestCase(unittest.TestCase):
+    def test(self):
+        s = parse(builder, """
+            rule1 = { rule2 }, 3 * "foo", "bar";
+            rule2 = [ "baz" ], ( "xxx" | "yyy", , , "zzz" ), ("foo" - "bar");
+        """)
+        fileName = os.path.join(
+            os.path.dirname(__file__),
+            "TestsOutput",
+            self.__class__.__name__ + "." + self._testMethodName + ".png"
+        )
+        drawSyntaxTo(s, fileName)

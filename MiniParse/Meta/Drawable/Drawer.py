@@ -97,6 +97,16 @@ class Drawer(object):
         self.ctx.stroke()
         self.ctx.translate(self.baseLength, 0)
 
+    def drawDeadEnd(self):
+        self.ctx.move_to(0, 0)
+        self.ctx.line_to(self.baseLength / 2, 0)
+        self.ctx.move_to(self.baseLength, self.baseLength / 2)
+        self.ctx.line_to(0, -self.baseLength / 2)
+        self.ctx.move_to(0, self.baseLength / 2)
+        self.ctx.line_to(self.baseLength, -self.baseLength / 2)
+        self.ctx.stroke()
+        self.ctx.translate(self.baseLength, 0)
+
     def getTextExtents(self, text, size):
         with self.__save:
             self.ctx.set_font_size(size * 10.)
