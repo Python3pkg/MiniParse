@@ -23,11 +23,23 @@ from MiniParse.Meta.Grammars.HandWrittenEbnf import parse as parseEbnf
 class GenerableIntegrationTestCase(unittest.TestCase):
     def test(self):
         s = parseEbnf(builder, """
-            toto = "toto";
-            main = toto | "titi";
+            Main = Toto | "titi" | TutuToto | ManyTata | MaybeTete | ThreeTuto | ManyTutaButNotTwo;
+            Toto = "toto";
+            TutuToto = "tutu", Toto;
+            ManyTata = {"tata"};
+            MaybeTete = ["tete"];
+            ThreeTuto = 3 * "tuto";
+            ManyTutaButNotTwo = {"tuta"} - ("tuta", "tuta");
         """)
-        code = s.generateMiniParser("main", computeParserName=lambda x: x.capitalize() + "Parser", computeMatchName=lambda x: "lambda x: x")
+        code = s.generateMiniParser("Main", computeParserName=lambda rule: rule + "Parser", computeMatchName=lambda rule: "lambda *x: tuple(['" + rule + ":'] + list(x))")
         exec code
+        print code
         p = Parser()
-        self.assertEqual(p(["toto"]), "toto")
-        self.assertEqual(p(["titi"]), "titi")
+        self.assertEqual(p(["toto"]), ("Main:", "toto"))
+        self.assertEqual(p(["titi"]), ("Main:", "titi"))
+        self.assertEqual(p(["tutu", "toto"]), ("Main:", ("TutuToto:", "tutu", "toto")))
+        self.assertEqual(p(["tata", "tata", "tata"]), ("Main:", ("ManyTata:", ["tata", "tata", "tata"])))
+        # @todo WTF
+        # self.assertEqual(p(["tete"]), ("Main:", ("MaybeTete:", "tete")))
+        # self.assertEqual(p(["tuto", "tuto", "tuto"]), ())
+        # self.assertEqual(p(["tuta", "tuta", "tuta"]), ())
