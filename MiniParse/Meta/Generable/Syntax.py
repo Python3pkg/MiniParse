@@ -103,3 +103,12 @@ class Restriction:
 
     def generate(self, computeParserName, args=""):
         return "RestrictionParser(" + self.__base.generate(computeParserName) + ", " + self.__exception.generate(computeParserName) + args + ")"
+
+
+class Repetition:
+    def __init__(self, n, base):
+        self.__n = n
+        self.__base = base
+
+    def generate(self, computeParserName, args=""):
+        return "RepetitionParser(" + str(self.__n) + ", " + self.__base.generate(computeParserName) + args + ")"

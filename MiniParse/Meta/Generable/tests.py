@@ -13,5 +13,20 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
+import unittest
+
 from MiniParse.Meta.Generable import builder
 from MiniParse.Meta.Grammars.HandWrittenEbnf import parse
+
+
+class GenerableIntegrationTestCase(unittest.TestCase):
+    def test(self):
+        s = parse(builder, """
+            rule1 = { rule2 }, 3 * "foo", "bar";
+            rule2 = [ "baz" ], ( "xxx" | "yyy", , , "zzz" ), ("foo" - "bar");
+            rule3 = "toto";
+        """)
+        p = s.generateMiniParser(computeParserName=lambda x: x.capitalize() + "Parser", computeMatchName=lambda x: "lambda *x: *x")
+        print
+        print p
+        print
