@@ -38,6 +38,13 @@ if __name__ == "__main__":
             "MiniParse",
             "MiniParse.Core",
             "MiniParse.Core.tests",
+            "MiniParse.Examples",
+            "MiniParse.Examples.StringArithmetic",
+            "MiniParse.Meta",
+            "MiniParse.Meta.Grammars",
+            "MiniParse.Meta.Grammars.HandWrittenEbnf",
+            "MiniParse.Meta.Drawable",
+            "MiniParse.Meta.Generable",
         ],
         package_data={
             "MiniParse": ["COPYING*"],

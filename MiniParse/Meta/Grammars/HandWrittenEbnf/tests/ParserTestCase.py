@@ -101,3 +101,17 @@ class HandWrittenEbnfParserTestCase(unittest.TestCase):
                 )
             ])
         )
+
+    def testLexingError(self):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
+            MiniParse.Meta.Grammars.HandWrittenEbnf.parse(b, "fo =\n'djsj ;")
+        self.assertEqual(cm.exception.message, "Unclosed string")
+        self.assertEqual(cm.exception.position, (1, 0))
+        self.assertEqual(cm.exception.expected, set())
+
+    def testParsingError(self):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
+            MiniParse.Meta.Grammars.HandWrittenEbnf.parse(b, "fo =\n'djsj',\n'uvw' abc;")
+        self.assertEqual(cm.exception.message, "Syntax error")
+        self.assertEqual(cm.exception.position, (2, 6))
+        self.assertEqual(cm.exception.expected, set([";", "|", ",", "-"]))

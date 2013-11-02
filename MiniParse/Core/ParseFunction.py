@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
 from Cursor import Cursor
-from SyntaxError import SyntaxError
+from ParsingError import ParsingError
 
 
 def parse(parser, tokens):
@@ -23,6 +23,6 @@ def parse(parser, tokens):
         if c.finished:
             return c.value
         else:
-            raise SyntaxError(*c.error)
+            raise ParsingError("Syntax error", *c.error)
     else:
-        raise SyntaxError(*c.error)
+        raise ParsingError("Syntax error", *c.error)

@@ -15,10 +15,10 @@
 
 import re
 
+import MiniParse
 import Tokens as Tok
 
 
-# @todo Do not loose the line/column information for reporting syntax errors in the parser
 class Lexer:
     def __init__(self):
         self.__space = re.compile("[ \t\n\r\v\f]*")
@@ -49,9 +49,10 @@ class Lexer:
     def __run(self, s):
         i = self.__skipSpaces(s, 0)
         while i < len(s):
+            i_before = i
             i, tok = self.__next(s, i)
             if not isinstance(tok, Tok.Comment):
-                yield tok
+                yield i_before, tok
 
     def __skipSpaces(self, s, i):
         return self.__space.match(s, i).end()
@@ -70,7 +71,9 @@ class Lexer:
         if m:
             return self.__skipSpaces(s, m.end()), Tok.Comment(m.group()[2:-2].strip())
         if s[i:i + 2] == "(*":
-            raise Exception(s[i:], i)
+            raise MiniParse.ParsingError("Unclosed comment", i, set())
+        if s[i] in ["'", '"']:
+            raise MiniParse.ParsingError("Unclosed string", i, set())
         m = self.__metaIdentifierWord.match(s, i)
         if m:
             words = []
@@ -82,4 +85,4 @@ class Lexer:
             return self.__skipSpaces(s, i), Tok.MetaIdentifier(words)
         if s[i] in self.__operators:
             return self.__skipSpaces(s, i + 1), self.__operators[s[i]]
-        raise Exception(s[i:], i)
+        raise MiniParse.ParsingError("Unexpected character", i, set())

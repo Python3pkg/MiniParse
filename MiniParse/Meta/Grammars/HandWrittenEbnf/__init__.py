@@ -19,6 +19,21 @@ import Parser
 
 
 def parse(builder, input):
+    def getLineCol(position):
+        before = input[:position]
+        lines = before.split("\n")
+        return len(lines) - 1, len(lines[-1])
+
     lex = Lexer.Lexer()
     parse = Parser.Parser(builder)
-    return parse(lex(input))
+    try:
+        tokens = lex(input)
+    except MiniParse.ParsingError, e:
+        position = e.position
+        raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
+    try:
+        g = parse([t for i, t in tokens])
+    except MiniParse.ParsingError, e:
+        position = tokens[e.position][0]
+        raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
+    return g

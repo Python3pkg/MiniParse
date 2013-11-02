@@ -16,7 +16,7 @@
 import unittest
 import MockMockMock
 
-from MiniParse import parse, SyntaxError
+from MiniParse import parse
 from MiniParse import SequenceParser
 from MiniParse.Core.Cursor import Cursor
 

@@ -24,28 +24,27 @@ class StringArithmeticTestCase(unittest.TestCase):
         actualOutput = Parser.Parser()(input).dump()
         self.assertEqual(actualOutput, expectedOutput)
 
-    def expectSyntaxError(self, input, expectedPosition, expectedExpected):
-        with self.assertRaises(MiniParse.SyntaxError) as cm:
+    def expectParsingError(self, input, expectedPosition, expectedExpected):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
             actualOutput = Parser.Parser()(input)
-        exception = cm.exception
-        actualPosition, actualExpected = exception.args
-        self.assertEqual(actualPosition, expectedPosition)
-        self.assertEqual(actualExpected, set(expectedExpected))
+        self.assertEqual(cm.exception.message, "Syntax error")
+        self.assertEqual(cm.exception.position, expectedPosition)
+        self.assertEqual(cm.exception.expected, set(expectedExpected))
 
     def testSimpleString(self):
         self.parseAndDump('"abcdef"', "abcdef")
 
     def testEmptyInput(self):
-        self.expectSyntaxError('', 0, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", '"', "(", "-"])
+        self.expectParsingError('', 0, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", '"', "(", "-"])
 
     def testForbidenChar(self):
-        self.expectSyntaxError('"A"', 1, ["a", "b", "c", "d", "e", "f", '"'])
+        self.expectParsingError('"A"', 1, ["a", "b", "c", "d", "e", "f", '"'])
 
     def testUnterminatedString(self):
-        self.expectSyntaxError('"abc', 4, ["a", "b", "c", "d", "e", "f", '"'])
+        self.expectParsingError('"abc', 4, ["a", "b", "c", "d", "e", "f", '"'])
 
     def testTrailingJunk(self):
-        self.expectSyntaxError('"abc"xxx', 5, ["+"])
+        self.expectParsingError('"abc"xxx', 5, ["+"])
 
     def testStringAddition(self):
         self.parseAndDump('"abc"+"def"', "abcdef")
@@ -62,13 +61,13 @@ class StringArithmeticTestCase(unittest.TestCase):
         self.parseAndDump('(1+1+1)*"abc"', "abcabcabc")
 
     def testBadAddition_1(self):
-        self.expectSyntaxError('(1+a)*"abc"', 3, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-"])
+        self.expectParsingError('(1+a)*"abc"', 3, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-"])
 
     def testBadAddition_2(self):
-        self.expectSyntaxError('(a+1)*"abc"', 1, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-", '"'])
+        self.expectParsingError('(a+1)*"abc"', 1, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-", '"'])
 
     def testBadStringFactor(self):
-        self.expectSyntaxError('(1+1)*a', 6, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-", '"'])
+        self.expectParsingError('(1+1)*a', 6, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "(", "-", '"'])
 
     def testNegativeNumbers(self):
         self.parseAndDump('(2+-1)*"abc"', "abc")
@@ -84,4 +83,4 @@ class StringArithmeticTestCase(unittest.TestCase):
         self.parseAndDump('(1+1)*("abc"+"def")', "abcdefabcdef")
 
     def testBadOperation(self):
-        self.expectSyntaxError('(1%1)*"a"', 2, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-", "+", "*", "/", ")"])
+        self.expectParsingError('(1%1)*"a"', 2, ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-", "+", "*", "/", ")"])

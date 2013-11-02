@@ -15,7 +15,7 @@
 
 import unittest
 
-from MiniParse import parse, SyntaxError
+from MiniParse import parse, ParsingError
 
 
 class ParserTestCase(unittest.TestCase):
@@ -23,7 +23,8 @@ class ParserTestCase(unittest.TestCase):
         self.assertEqual(parse(self.p, input), value)
 
     def expectFailure(self, input, position, expected):
-        with self.assertRaises(SyntaxError) as cm:
+        with self.assertRaises(ParsingError) as cm:
             parse(self.p, input)
+        self.assertEqual(cm.exception.message, "Syntax error")
         self.assertEqual(cm.exception.position, position)
         self.assertEqual(cm.exception.expected, set(expected))

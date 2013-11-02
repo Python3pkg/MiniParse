@@ -13,19 +13,19 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-Repetition = "Repetition"
-Except = "Except"
-Concatenate = "Concatenate"
-DefinitionSeparator = "DefinitionSeparator"
-Defining = "Defining"
-Terminator = "Terminator"
+Repetition = "*"
+Except = "-"
+Concatenate = ","
+DefinitionSeparator = "|"
+Defining = "="
+Terminator = ";"
 
-StartGroup = "StartGroup"
-EndGroup = "EndGroup"
-StartOption = "StartOption"
-EndOption = "EndOption"
-StartRepeat = "StartRepeat"
-EndRepeat = "EndRepeat"
+StartGroup = "("
+EndGroup = ")"
+StartOption = "["
+EndOption = "]"
+StartRepeat = "{"
+EndRepeat = "}"
 
 
 class Terminal:

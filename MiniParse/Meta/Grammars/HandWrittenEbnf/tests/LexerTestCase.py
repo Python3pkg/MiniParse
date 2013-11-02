@@ -16,6 +16,7 @@
 import os
 import unittest
 
+import MiniParse
 import MiniParse.Meta.Grammars.HandWrittenEbnf.Tokens as Tok
 from MiniParse.Meta.Grammars.HandWrittenEbnf.Lexer import Lexer
 
@@ -24,8 +25,10 @@ class HandWrittenEbnfLexerTestCase(unittest.TestCase):
     def setUp(self):
         self.lexer = Lexer()
 
-    def lex(self, input, output):
-        self.assertEqual(self.lexer(input), output)
+    def lex(self, input, output, positions=None):
+        self.assertEqual([t for i, t in self.lexer(input)], output)
+        if positions is not None:
+            self.assertEqual([i for i, t in self.lexer(input)], positions)
 
     def testOperators(self):
         self.lex("*", [Tok.Repetition])
@@ -74,17 +77,21 @@ class HandWrittenEbnfLexerTestCase(unittest.TestCase):
                 Tok.MetaIdentifier(["a", "third", "meta"]),
                 Tok.EndRepeat,
                 Tok.Terminator
-            ]
+            ],
+            [0, 19, 21, 24, 26, 27, 29, 42, 43, 45, 58, 59]
         )
 
     def testUnknownChar(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
             self.lexer("abcd = efgh, ijkl:")
+        self.assertEqual(cm.exception.args, ("Unexpected character", 17, set()))
 
     def testUnclosedString(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
             self.lexer("abcd = efgh; ' ijkl")
+        self.assertEqual(cm.exception.args, ("Unclosed string", 13, set()))
 
     def testUnclosedComment(self):
-        with self.assertRaises(Exception):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
             self.lexer("abcd = efgh; (* ijkl")
+        self.assertEqual(cm.exception.args, ("Unclosed comment", 13, set()))
