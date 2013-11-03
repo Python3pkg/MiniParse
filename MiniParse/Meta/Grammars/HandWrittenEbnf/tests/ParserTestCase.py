@@ -115,3 +115,10 @@ class HandWrittenEbnfParserTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.message, "Syntax error")
         self.assertEqual(cm.exception.position, (2, 6))
         self.assertEqual(cm.exception.expected, set([";", "|", ",", "-"]))
+
+    def testParsingErrorAtEndOfInput(self):
+        with self.assertRaises(MiniParse.ParsingError) as cm:
+            MiniParse.Meta.Grammars.HandWrittenEbnf.parse(b, "fo='djsj'; a")
+        self.assertEqual(cm.exception.message, "Syntax error")
+        self.assertEqual(cm.exception.position, (0, 12))
+        self.assertEqual(cm.exception.expected, set(["="]))

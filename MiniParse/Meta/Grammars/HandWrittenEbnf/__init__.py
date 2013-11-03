@@ -34,6 +34,9 @@ def parse(builder, input):
     try:
         g = parse([t for i, t in tokens])
     except MiniParse.ParsingError, e:
-        position = tokens[e.position][0]
+        if e.position < len(tokens):
+            position = tokens[e.position][0]
+        else:
+            position = len(input)
         raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
     return g
