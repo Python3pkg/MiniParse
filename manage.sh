@@ -37,7 +37,7 @@ function test3 {
 }
 
 function test {
-    test3
+    # test3
     test2
 }
 
