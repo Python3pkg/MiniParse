@@ -13,4 +13,10 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+
+class ParsingError(Exception):
+    def __init__(self, message, position, expected):
+        Exception.__init__(self, message, position, expected)
+        self.message = message
+        self.position = position
+        self.expected = expected

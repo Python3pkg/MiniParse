@@ -13,4 +13,18 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+import unittest
+
+from MiniParse import parse, ParsingError
+
+
+class ParserTestCase(unittest.TestCase):
+    def expectSuccess(self, input, value):
+        self.assertEqual(parse(self.p, input), value)
+
+    def expectFailure(self, input, position, expected):
+        with self.assertRaises(ParsingError) as cm:
+            parse(self.p, input)
+        self.assertEqual(cm.exception.message, "Syntax error")
+        self.assertEqual(cm.exception.position, position)
+        self.assertEqual(cm.exception.expected, set(expected))

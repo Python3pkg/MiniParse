@@ -13,4 +13,30 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+import MiniParse
+import Lexer
+import Parser
+
+
+def parse(builder, input):
+    def getLineCol(position):
+        before = input[:position]
+        lines = before.split("\n")
+        return len(lines) - 1, len(lines[-1])
+
+    lex = Lexer.Lexer()
+    parse = Parser.Parser(builder)
+    try:
+        tokens = lex(input)
+    except MiniParse.ParsingError, e:
+        position = e.position
+        raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
+    try:
+        g = parse([t for i, t in tokens])
+    except MiniParse.ParsingError, e:
+        if e.position < len(tokens):
+            position = tokens[e.position][0]
+        else:
+            position = len(input)
+        raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
+    return g

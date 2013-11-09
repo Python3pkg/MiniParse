@@ -13,4 +13,16 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+
+class LiteralParser:
+    def __init__(self, value, match=None):
+        self.__value = value
+        self.__match = match or value
+
+    def apply(self, cursor):
+        with cursor.backtracking as bt:
+            if cursor.finished or cursor.current != self.__value:
+                return bt.expected(self.__value)
+            else:
+                cursor.advance()
+                return bt.success(self.__match)

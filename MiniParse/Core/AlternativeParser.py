@@ -13,5 +13,15 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from LowLevelTests import *
-from StringArithmeticGrammar import *
+
+class AlternativeParser:
+    def __init__(self, elements, match=lambda x: x):
+        self.__elements = elements
+        self.__match = match
+
+    def apply(self, cursor):
+        with cursor.backtracking as bt:  # @todo Here, we need backtracking only because of self.__expected.
+            for element in self.__elements:
+                if element.apply(cursor):
+                    return bt.success(self.__match(cursor.value))
+            return bt.failure()

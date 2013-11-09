@@ -13,4 +13,25 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+
+class Syntax:
+    def __init__(self, rules):
+        self.rules = rules
+
+    def getExtents(self, ctx):
+        width = 0
+        height = 0
+
+        for rule in self.rules:
+            w, h = rule.getExtents(ctx)
+            width = max(w, width)
+            height += 10 + h
+        height -= 10
+
+        return width, height
+
+    def draw(self, ctx):
+        for rule in self.rules:
+            w, h = rule.getExtents(ctx)
+            rule.draw(ctx)
+            ctx.translate(0, h + 10)

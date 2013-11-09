@@ -13,4 +13,14 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+
+class RepeatedParser:
+    def __init__(self, parser, match=lambda x: x):
+        self.__parser = parser
+        self.__match = match
+
+    def apply(self, cursor):
+        values = []
+        while self.__parser.apply(cursor):
+            values.append(cursor.value)
+        return cursor.success(self.__match(values))

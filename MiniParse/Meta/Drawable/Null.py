@@ -13,4 +13,25 @@
 
 # You should have received a copy of the GNU Lesser General Public License along with MiniParse.  If not, see <http://www.gnu.org/licenses/>.
 
-from Core import *
+
+class __Null:
+    def getExtents(self, drawer):
+        return 0, 0, 0
+
+    def draw(self, drawer):
+        pass
+
+    def __repr__(self):
+        return "Null"
+
+    def _simplify(self):
+        return self
+
+    def _getAtomicSuffix(self):
+        return self
+
+    def _getAtomicPrefix(self):
+        return self
+
+
+Null = __Null()
