@@ -28,8 +28,8 @@ function check {
 
 function test2 {
     generate
-    coverage run --branch --include=MiniParse/*.py --omit=MiniParse/tests/*.py setup.py test --quiet || exit
-    coverage report --show-missing || exit
+    coverage2 run --branch --include=MiniParse/*.py --omit=MiniParse/tests/*.py setup.py test --quiet || exit
+    coverage2 report --show-missing || exit
 }
 
 function test3 {
