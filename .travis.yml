@@ -1,6 +1,20 @@
 language: python
 python:
-  - "2.7"
-  - "3.3"
+- 2.7
+- 3.3
+- 3.4
+install:
+- pip install sphinx coveralls
 script:
-  - python setup.py test
+- coverage run "--include=MiniParse/*" setup.py test
+after_success:
+- coveralls
+deploy:
+  provider: pypi
+  user: jacquev6
+  password:
+    secure: ZhNIHNDInYn+f2Hl05T4iy7deNwCC72dm/cvvaKfNp/lVJuC5B5BivmOgIfsjSDCCBPSI1OFGD3VwY7ihGH6TwyAGjIhdrkLux9Zy3+tlX4EPlXTzJaOh1wVWnKIFfUimI+ulumkYlrka7G1PcR4CmREKmRcj59OrAl/mRqoHmU=
+  on:
+    tags: true
+    repo: jacquev6/MiniParse
+    python: 2.7
