@@ -18,6 +18,7 @@ setuptools.setup(
     author_email="vincent@vincent-jacques.net",
     url="http://jacquev6.github.com/MiniParse",
     packages=setuptools.find_packages(),
+    license="MIT",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
