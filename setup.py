@@ -5,7 +5,7 @@
 
 import setuptools
 
-version = "0.2.1"
+version = "0.2.2"
 
 # @todo Add doctests and run them on Travis
 
