@@ -1,5 +1,5 @@
 MiniParse is a minimal, hence simple, parsing library in Python (2.7+ and 3.3+), with a focus on clear error messages.
-An `interactive demo <http://jacquev6.github.com/MiniParse>`__ is available.
+An `interactive demo <http://vincent-jacques.net/MiniParse>`__ is available.
 
 It's licensed under the `MIT license <http://choosealicense.com/licenses/mit/>`__.
 It's available on the `Python package index <http://pypi.python.org/pypi/MiniParse>`__,
