@@ -29,6 +29,12 @@ Questions? Remarks? Bugs? Want to contribute? `Open an issue <https://github.com
 .. image:: https://img.shields.io/pypi/v/MiniParse.svg
     :target: https://pypi.python.org/pypi/MiniParse
 
+.. image:: https://img.shields.io/pypi/pyversions/MiniParse.svg
+    :target: https://pypi.python.org/pypi/MiniParse
+
+.. image:: https://img.shields.io/pypi/status/MiniParse.svg
+    :target: https://pypi.python.org/pypi/MiniParse
+
 .. image:: https://img.shields.io/github/issues/jacquev6/MiniParse.svg
     :target: https://github.com/jacquev6/MiniParse/issues
 
