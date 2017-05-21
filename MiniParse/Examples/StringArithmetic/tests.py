@@ -5,7 +5,7 @@
 import unittest
 
 import MiniParse
-import Parser
+from . import Parser
 
 
 class StringArithmeticTestCase(unittest.TestCase):

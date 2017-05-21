@@ -4,7 +4,7 @@
 
 import MiniParse
 
-import ParsingUtilities
+from . import ParsingUtilities
 
 
 class Parser:

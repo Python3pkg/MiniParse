@@ -3,8 +3,8 @@
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
 import MiniParse
-import Lexer
-import Parser
+from . import Lexer
+from . import Parser
 
 
 def parse(builder, input):
@@ -17,12 +17,12 @@ def parse(builder, input):
     parse = Parser.Parser(builder)
     try:
         tokens = lex(input)
-    except MiniParse.ParsingError, e:
+    except MiniParse.ParsingError as e:
         position = e.position
         raise MiniParse.ParsingError(e.message, getLineCol(position), e.expected)
     try:
         g = parse([t for i, t in tokens])
-    except MiniParse.ParsingError, e:
+    except MiniParse.ParsingError as e:
         if e.position < len(tokens):
             position = tokens[e.position][0]
         else:

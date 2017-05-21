@@ -4,7 +4,7 @@
 
 from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser, parse
 
-import Tokens as Tok
+from . import Tokens as Tok
 
 
 class ClassParser:

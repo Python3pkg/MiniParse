@@ -2,7 +2,7 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-from Drawer import Drawer
+from .Drawer import Drawer
 
 
 class Rule(object):

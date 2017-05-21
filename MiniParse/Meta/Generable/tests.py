@@ -22,7 +22,7 @@ class GenerableIntegrationTestCase(unittest.TestCase):
         """)
         code = s.generateMiniParser("Main", computeParserName=lambda rule: rule + "Parser", computeMatchName=lambda rule: "lambda *x: tuple(['" + rule + ":'] + list(x))")
         globs = {"MiniParse": MiniParse}
-        exec code in globs
+        exec(code, globs)
         Parser = globs["Parser"]
         p = Parser()
         self.assertEqual(p(["toto"]), ("Main:", "toto"))

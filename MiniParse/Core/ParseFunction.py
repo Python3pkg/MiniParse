@@ -2,8 +2,8 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-from Cursor import Cursor
-from ParsingError import ParsingError
+from .Cursor import Cursor
+from .ParsingError import ParsingError
 
 
 def parse(parser, tokens):

@@ -2,15 +2,15 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-from Syntax import Syntax
-from Rule import Rule
-from Alternative import Alternative
-from Sequence import Sequence
-from Repetition import Repetition
-from Terminal import Terminal
-from NonTerminal import NonTerminal
-from Restriction import Restriction
-from Null import Null
+from .Syntax import Syntax
+from .Rule import Rule
+from .Alternative import Alternative
+from .Sequence import Sequence
+from .Repetition import Repetition
+from .Terminal import Terminal
+from .NonTerminal import NonTerminal
+from .Restriction import Restriction
+from .Null import Null
 
 
 class Builder:

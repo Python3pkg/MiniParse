@@ -2,8 +2,8 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-import Null
-import Repetition
+from . import Null
+from . import Repetition
 
 
 class Sequence:

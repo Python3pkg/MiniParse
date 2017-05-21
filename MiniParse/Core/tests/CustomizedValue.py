@@ -6,7 +6,7 @@ import unittest
 import MockMockMock
 
 from MiniParse import LiteralParser, SequenceParser, AlternativeParser, OptionalParser, RepeatedParser
-from Framework import ParserTestCase
+from .Framework import ParserTestCase
 
 
 class CustomizedValue(ParserTestCase):

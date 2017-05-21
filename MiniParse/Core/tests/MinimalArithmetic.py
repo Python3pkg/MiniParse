@@ -6,7 +6,7 @@ import unittest
 
 from MiniParse import OptionalParser, SequenceParser, AlternativeParser, LiteralParser, RepeatedParser
 
-from Framework import ParserTestCase
+from .Framework import ParserTestCase
 
 
 class MinimalArithmetic(ParserTestCase):

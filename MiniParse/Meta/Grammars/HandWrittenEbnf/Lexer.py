@@ -5,7 +5,7 @@
 import re
 
 import MiniParse
-import Tokens as Tok
+from . import Tokens as Tok
 
 
 class Lexer:

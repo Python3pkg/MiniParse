@@ -6,9 +6,9 @@ import sys
 import pipes  # For pipes.quote: see http://stackoverflow.com/questions/4748344/whats-the-reverse-of-shlex-split
 import InteractiveCommandLine as ICL
 
-import Grammars.HandWrittenEbnf
-import Generable
-import Drawable
+from . import Grammars.HandWrittenEbnf
+from . import Generable
+from . import Drawable
 
 
 class Generate(ICL.Command):

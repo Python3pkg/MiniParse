@@ -2,7 +2,7 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-from Syntax import *
+from .Syntax import *
 
 
 class Builder:

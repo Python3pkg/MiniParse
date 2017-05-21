@@ -2,4 +2,4 @@
 
 # Copyright 2013-2015 Vincent Jacques <vincent@vincent-jacques.net>
 
-from HandWrittenEbnf.tests import *
+from .HandWrittenEbnf.tests import *
